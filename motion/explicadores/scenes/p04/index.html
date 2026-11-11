@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="es" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>P04 · Qué es un endpoint</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="shared/teacher.css" />
+    <script src="shared/teacher.js"></script>
+    <style>
+      /* Pizarra: la URL del endpoint se desarma en cuatro partes */
+      .url { position: absolute; left: 0; right: 0; top: 10px; height: 120px; display: flex; justify-content: center; align-items: center; gap: 6px; border-radius: 30px; background: rgba(255, 255, 255, .04); border: 2px solid var(--line); }
+      .seg { font-family: "JetMono"; font-weight: 800; font-size: 58px; padding: 8px 18px; border-radius: 18px; color: #f4f0ff; }
+      .seg.a { color: #45e0a8; } .seg.b { color: #5bdcff; } .seg.c { color: #ffc45a; } .seg.d { color: #ff7ab6; }
+      #board .part { width: 420px; height: 284px; top: 180px; }
+      #p1 { left: 0; border-color: #45e0a8; } #p2 { left: 452px; border-color: #5bdcff; } #p3 { left: 904px; border-color: #ffc45a; } #p4 { left: 1356px; border-color: #ff7ab6; }
+      #p1 .ic { color: #45e0a8; } #p2 .ic { color: #5bdcff; } #p3 .ic { color: #ffc45a; } #p4 .ic { color: #ff7ab6; }
+      .part .val { font-family: "JetMono"; font-weight: 800; font-size: 28px; }
+      #p1 .val { color: #45e0a8; } #p2 .val { color: #5bdcff; } #p3 .val { color: #ffc45a; } #p4 .val { color: #ff7ab6; }
+      #n1 { left: -14px; top: 150px; } #n2 { left: 438px; top: 150px; } #n3 { left: 890px; top: 150px; } #n4 { left: 1342px; top: 150px; }
+      #more { left: 0; top: 490px; width: 1440px; height: 110px; padding: 0 26px; gap: 16px; }
+      #more h3 { font-size: 30px; white-space: nowrap; }
+      #more .tag { position: relative; height: 54px; font-size: 24px; font-family: "JetMono"; }
+      #more .tag em { font-style: normal; font-family: "Figtree"; color: #c9bfe0; font-weight: 700; margin-left: 6px; }
+      /* Analogía: la dirección de una casa, de lo general a lo exacto */
+      .addr { position: absolute; left: 70px; top: 70px; width: 470px; display: flex; flex-direction: column; gap: 16px; }
+      .addr div { height: 86px; border-radius: 20px; display: flex; align-items: center; gap: 16px; padding: 0 24px; background: rgba(255,255,255,.07); font-size: 30px; font-weight: 800; color: #f4f0ff; }
+      .addr div small { font-size: 22px; font-weight: 750; color: #8f86a3; width: 120px; }
+      .addr .x1 { border-left: 10px solid #45e0a8; } .addr .x2 { border-left: 10px solid #5bdcff; } .addr .x3 { border-left: 10px solid #ffc45a; } .addr .x4 { border-left: 10px solid #ff7ab6; }
+      .pin { position: absolute; left: 590px; top: 420px; width: 90px; height: 90px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: #ff7ab6; }
+      .pin::after { content: ""; position: absolute; left: 28px; top: 28px; width: 34px; height: 34px; border-radius: 50%; background: #0c0a12; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="p04" data-start="0" data-duration="44" data-width="1920" data-height="1080" data-fps="30">
+      <div id="board">
+        <div class="url"><span class="seg a">https://</span><span class="seg b">api.openai.com</span><span class="seg c">/v1</span><span class="seg d">/responses</span></div>
+
+        <div class="card part" id="p1"><span data-icon="lock"></span><h3>Protocolo</h3><span class="val">https://</span><p>Comunicación cifrada: nadie lee lo que viaja.</p></div>
+        <div class="card part" id="p2"><span data-icon="globe"></span><h3>Dominio</h3><span class="val">api.openai.com</span><p>El servidor del proveedor que te atiende.</p></div>
+        <div class="card part" id="p3"><span data-icon="layers"></span><h3>Versión</h3><span class="val">/v1</span><p>Versión principal: tu código no se rompe si cambia.</p></div>
+        <div class="card part" id="p4"><span data-icon="target"></span><h3>Recurso</h3><span class="val">/responses</span><p>La operación: crear respuestas del modelo.</p></div>
+
+        <div class="num" id="n1">1</div><div class="num" id="n2">2</div><div class="num" id="n3">3</div><div class="num" id="n4">4</div>
+
+        <div class="card row accent" id="more"><h3>Misma API, otras puertas:</h3>
+          <span class="tag cyan mo">/v1/models<em>modelos</em></span>
+          <span class="tag cyan mo">/v1/files<em>archivos</em></span>
+          <span class="tag accent mo">/v1/responses</span></div>
+      </div>
+    </div>
+    <script>
+      const T = Teacher.setup({
+        cls: 2, point: 4,
+        title: "¿Qué es un <em>endpoint</em>?",
+        headTitle: "Qué es un endpoint",
+        question: "Una API tiene muchas puertas. ¿Cómo sabe tu programa a cuál tocar para pedirle algo a la IA?",
+        analogy: {
+          art: `<div class="addr">
+            <div class="x1"><small>País</small>Guatemala</div>
+            <div class="x2"><small>Ciudad</small>Quetzaltenango</div>
+            <div class="x3"><small>Calle</small>4a. calle, zona 1</div>
+            <div class="x4"><small>Casa</small>Número 12</div></div><div class="pin"></div>`,
+          title: "Una dirección postal",
+          text: "Para entregar una carta vas de lo <em>general</em> a lo <em>exacto</em>: país, ciudad, calle y casa. Un endpoint es la dirección exacta de una operación.",
+        },
+        steps: [
+          { label: "Protocolo", caption: "<em>https://</em> dice cómo viajar: con cifrado, para que nadie lea tus datos en el camino." },
+          { label: "Dominio", caption: "<em>api.openai.com</em> identifica el servidor del proveedor que recibe tu pedido." },
+          { label: "Versión", caption: "<em>/v1</em> fija la versión principal de la API, como la edición de un libro." },
+          { label: "Recurso", caption: "<em>/responses</em> es la operación exacta: crear una respuesta del modelo." },
+          { label: "Otros endpoints", caption: "La misma API tiene <em>otras puertas</em>: consultar modelos, subir archivos y más." },
+        ],
+        takeaway: {
+          title: "Un endpoint es la <em>dirección exacta</em> de una operación de la API.",
+          text: "Protocolo + dominio + versión + recurso: https://api.openai.com/v1/responses",
+        },
+      });
+
+      const s = T.stepAt;
+      // Analogía: la dirección se arma de lo general a lo exacto
+      T.slide("@.t-analogy-art .addr div", T.analogyAt(.5), { x: -40, y: 0, stagger: .7 });
+      T.pop("@.t-analogy-art .pin", T.analogyAt(3.6));
+      T.to("@.t-analogy-art .pin", T.analogyAt(4.4), { y: -24, duration: .4, yoyo: true, repeat: 3, ease: "sine.inOut" });
+
+      // Estados iniciales
+      T.tl.set(["#board .card", "#board .num", "#more .mo"], { opacity: 0 }, 0);
+      T.tl.set("#board .seg", { opacity: .35 }, 0);
+      T.tl.set("#board .url", { opacity: 0 }, 0);
+      T.fadeIn(".url", s(0, -.4), .4);
+
+      const show = (i, seg, card, num, color) => {
+        T.to(seg, s(i, .15), { opacity: 1, backgroundColor: `rgba(${parseInt(color.slice(1,3),16)},${parseInt(color.slice(3,5),16)},${parseInt(color.slice(5,7),16)},.2)`, duration: .4 });
+        T.pulse(seg, s(i, .5), 1.08);
+        T.pop(card, s(i, .9)).pop(num, s(i, 1.15));
+        T.glow(card, s(i, 2.4), color);
+      };
+      show(0, ".seg.a", "#p1", "#n1", "#45e0a8");
+      show(1, ".seg.b", "#p2", "#n2", "#5bdcff");
+      show(2, ".seg.c", "#p3", "#n3", "#ffc45a");
+      show(3, ".seg.d", "#p4", "#n4", "#ff7ab6");
+
+      // Paso 5 · Otros endpoints
+      T.pop("#more", s(4, .1));
+      T.slide("#more .mo", s(4, .6), { x: -20, y: 0, stagger: .4 });
+      T.pulse("#more .tag.accent", s(4, 2.6), 1.08);
+
+      window.__timelines["p04"] = T.tl;
+    </script>
+  </body>
+</html>

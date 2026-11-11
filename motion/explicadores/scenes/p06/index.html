@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="es" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>P06 · Anatomía de una solicitud HTTP</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="shared/teacher.css" />
+    <script src="shared/teacher.js"></script>
+    <style>
+      /* Pizarra: la solicitud por partes (izquierda) y qué es cada una (derecha) */
+      .blk { position: absolute; left: 0; width: 1000px; border-radius: 24px; padding: 18px 26px; background: #f6f2ff; color: #1b1426; font-family: "JetMono"; font-size: 27px; line-height: 1.42; box-shadow: 0 22px 50px rgba(0, 0, 0, .45); border-left: 14px solid; }
+      .blk .k { color: #7a3cff; font-weight: 800; }
+      .blk .v { color: #0c7a55; font-weight: 700; }
+      .blk .m { display: inline-block; padding: 0 12px; border-radius: 10px; background: #5bdcff; color: #04303d; font-weight: 800; }
+      #b1 { top: 0; border-color: #5bdcff; }
+      #b2 { top: 112px; border-color: #ffc45a; }
+      #b3 { top: 256px; border-color: #45e0a8; }
+      .exp { position: absolute; left: 1060px; width: 716px; height: 96px; display: flex; align-items: center; gap: 18px; padding: 0 22px; border-radius: 22px; background: rgba(255, 255, 255, .05); border: 2px solid; }
+      .exp b { font-family: "Bricolage"; font-weight: 750; font-size: 34px; white-space: nowrap; }
+      .exp span { font-size: 25px; line-height: 1.2; color: #c9bfe0; }
+      #e1 { top: 0; border-color: #5bdcff; } #e1 b { color: #5bdcff; }
+      #e2 { top: 128px; border-color: #ffc45a; } #e2 b { color: #ffc45a; }
+      #e3 { top: 278px; border-color: #45e0a8; } #e3 b { color: #45e0a8; }
+      #resp { left: 1060px; top: 384px; width: 430px; height: 214px; }
+      #resp .tag { position: relative; height: 52px; font-size: 26px; }
+      #resp .row2 { display: flex; gap: 10px; }
+      #note-json { left: 560px; top: 470px; max-width: 440px; }
+      /* Analogía: el sobre, la carta y el acuse de recibo */
+      .mail { position: absolute; inset: 0; }
+      .envelope { position: absolute; left: 90px; top: 90px; width: 560px; height: 300px; border-radius: 20px; background: #f6f2ff; overflow: hidden; }
+      .envelope .flap { position: absolute; left: 0; right: 0; top: 0; height: 150px; background: #e4dcf7; clip-path: polygon(0 0, 100% 0, 50% 100%); }
+      .envelope .to { position: absolute; left: 40px; top: 190px; font-family: "JetMono"; font-weight: 800; font-size: 26px; color: #1b1426; }
+      .envelope .stamp { position: absolute; right: 30px; top: 26px; width: 110px; height: 90px; border-radius: 10px; border: 4px dashed #7a3cff; display: grid; place-items: center; font-weight: 900; font-size: 22px; color: #7a3cff; background: #fff; }
+      .letter { position: absolute; left: 130px; top: 300px; width: 480px; padding: 22px 26px; border-radius: 16px; background: #ffffff; color: #1b1426; font-size: 28px; font-weight: 750; line-height: 1.25; box-shadow: 0 16px 30px rgba(0,0,0,.35); }
+      .receipt { position: absolute; left: 330px; top: 510px; padding: 14px 24px; border-radius: 14px; background: #45e0a8; color: #052016; font-weight: 900; font-size: 30px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="p06" data-start="0" data-duration="44" data-width="1920" data-height="1080" data-fps="30">
+      <div id="board">
+        <div class="blk" id="b1"><span class="m">POST</span> https://api.openai.com/v1/responses</div>
+        <div class="blk" id="b2"><span class="k">Authorization:</span> <span class="v">Bearer $OPENAI_API_KEY</span><br><span class="k">Content-Type:</span> <span class="v">application/json</span></div>
+        <div class="blk" id="b3">{<br>&nbsp;&nbsp;<span class="k">"model"</span>: <span class="v">"gpt-6-luna"</span>,<br>&nbsp;&nbsp;<span class="k">"input"</span>: <span class="v">"Explica qué es una variable en Java."</span><br>}</div>
+
+        <div class="exp" id="e1"><b>Método + URL</b><span>Qué acción y en qué dirección.</span></div>
+        <div class="exp" id="e2"><b>Encabezados</b><span>Quién eres (clave) y en qué formato hablas.</span></div>
+        <div class="exp" id="e3"><b>Cuerpo</b><span>Los datos: qué modelo y qué le preguntas.</span></div>
+
+        <div class="card green" id="resp"><h3>Respuesta</h3>
+          <div class="row2"><span class="tag green rt">200 OK</span><span class="tag red rt">401 sin clave</span></div>
+          <p class="rt">Trae un código y un cuerpo JSON.</p></div>
+        <div class="note purple" id="note-json">El cuerpo va en JSON, no en texto suelto.</div>
+      </div>
+    </div>
+    <script>
+      const T = Teacher.setup({
+        cls: 2, point: 6,
+        title: "Anatomía de una <em>solicitud</em> HTTP",
+        headTitle: "Anatomía de una solicitud HTTP",
+        question: "Cuando tu programa le habla a la IA, ¿qué viaja exactamente por la red? Abramos el paquete.",
+        analogy: {
+          art: `<div class="mail">
+            <div class="envelope"><div class="flap"></div><div class="to">Para: api.openai.com</div><div class="stamp">CLAVE</div></div>
+            <div class="letter">“Explica qué es una variable en Java.”</div>
+            <div class="receipt">Recibido · 200</div></div>`,
+          title: "Una carta en su sobre",
+          text: "El sobre lleva la <em>dirección</em>, el sello dice quién la envía, adentro va el <em>contenido</em> y al final recibes un acuse. Una solicitud HTTP es igual.",
+        },
+        steps: [
+          { label: "Método y URL", caption: "Primero va el <em>método</em> y la dirección: POST a https://api.openai.com/v1/responses." },
+          { label: "Encabezados", caption: "Los <em>headers</em> llevan la clave con Bearer y avisan que el cuerpo es JSON." },
+          { label: "Cuerpo JSON", caption: "El <em>body</em> lleva los datos: el modelo gpt-6-luna y la pregunta en input." },
+          { label: "Respuesta", caption: "El servidor contesta con un <em>código de estado</em>: 200 si salió bien, 401 si falta la clave." },
+        ],
+        takeaway: {
+          title: "Toda solicitud = <em>método y URL</em> + encabezados + cuerpo.",
+          text: "Y toda respuesta trae un código de estado y un cuerpo que tu programa debe revisar.",
+        },
+      });
+
+      const s = T.stepAt;
+      // Analogía: llega el sobre, sale la carta y vuelve el acuse
+      T.tl.set([".t-analogy-art .letter", ".t-analogy-art .receipt"], { opacity: 0 }, 0);
+      T.slide("@.t-analogy-art .envelope", T.analogyAt(.3), { x: -60, y: 0 });
+      T.pulse("@.t-analogy-art .to", T.analogyAt(1.4), 1.08);
+      T.pop("@.t-analogy-art .stamp", T.analogyAt(2.2));
+      T.fadeIn("@.t-analogy-art .letter", T.analogyAt(3.2));
+      T.to("@.t-analogy-art .letter", T.analogyAt(3.2), { y: 40, duration: .8 });
+      T.pop("@.t-analogy-art .receipt", T.analogyAt(5));
+
+      // Estados iniciales
+      T.tl.set(["#board .blk", "#board .exp", "#resp", "#board .rt", "#note-json"], { opacity: 0 }, 0);
+
+      // Paso 1 · Método y URL
+      T.slide("#b1", s(0, .2), { x: -40, y: 0 });
+      T.pulse("#b1 .m", s(0, 1.2), 1.12);
+      T.slide("#e1", s(0, 1.8), { x: 40, y: 0 });
+      T.glow("#b1", s(0, 2.8), "#5bdcff");
+
+      // Paso 2 · Encabezados
+      T.to("#b1", s(1, 0), { boxShadow: "0 22px 50px rgba(0,0,0,.45)", duration: .3 });
+      T.slide("#b2", s(1, .2), { x: -40, y: 0 });
+      T.slide("#e2", s(1, 1.6), { x: 40, y: 0 });
+      T.glow("#b2", s(1, 2.6), "#ffc45a");
+
+      // Paso 3 · Cuerpo JSON
+      T.to("#b2", s(2, 0), { boxShadow: "0 22px 50px rgba(0,0,0,.45)", duration: .3 });
+      T.slide("#b3", s(2, .2), { x: -40, y: 0 });
+      T.slide("#e3", s(2, 1.4), { x: 40, y: 0 });
+      T.slide("#note-json", s(2, 2.2), { y: 20 });
+      T.glow("#b3", s(2, 2.8), "#45e0a8");
+
+      // Paso 4 · Respuesta
+      T.fadeOut("#note-json", s(3, 0));
+      T.to("#b3", s(3, 0), { boxShadow: "0 22px 50px rgba(0,0,0,.45)", duration: .3 });
+      T.pop("#resp", s(3, .3));
+      T.pop("#resp .rt", s(3, .9), .5);
+      T.pulse("#resp .tag.green", s(3, 2.6), 1.1);
+
+      window.__timelines["p06"] = T.tl;
+    </script>
+  </body>
+</html>

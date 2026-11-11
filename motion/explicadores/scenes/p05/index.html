@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>P05 · Métodos HTTP</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="shared/teacher.css" />
+    <script src="shared/teacher.js"></script>
+    <style>
+      /* Pizarra: tabla de métodos y el que usamos para la IA */
+      .mrow { position: absolute; left: 0; width: 1400px; height: 92px; display: grid; grid-template-columns: 200px 470px 1fr; align-items: center; gap: 22px; padding: 0 24px 0 14px; border-radius: 22px; background: rgba(255, 255, 255, .045); border: 2px solid rgba(185, 151, 255, .18); }
+      .mrow .verb { display: grid; place-items: center; height: 62px; border-radius: 16px; font-family: "JetMono"; font-weight: 800; font-size: 32px; }
+      .mrow .what { font-family: "Bricolage"; font-weight: 700; font-size: 32px; }
+      .mrow .ex { font-size: 26px; color: #c9bfe0; line-height: 1.2; }
+      .mrow .ex code { font-family: "JetMono"; font-size: 23px; color: #c4f2ff; }
+      #r1 { top: 6px; } #r2 { top: 112px; } #r3 { top: 218px; } #r4 { top: 324px; } #r5 { top: 430px; }
+      #r1 .verb { background: rgba(91, 220, 255, .18); color: #5bdcff; }
+      #r2 .verb { background: rgba(69, 224, 168, .18); color: #45e0a8; }
+      #r3 .verb, #r4 .verb { background: rgba(255, 196, 90, .18); color: #ffc45a; }
+      #r5 .verb { background: rgba(255, 92, 120, .18); color: #ff5c78; }
+      #ai { left: 1436px; top: 6px; width: 340px; height: 420px; }
+      #ai .paper { position: relative; margin-top: 6px; font-size: 23px; padding: 14px 16px; width: 100%; word-break: break-all; }
+      #note-ai { left: 1436px; top: 446px; max-width: 340px; }
+      /* Analogía: la biblioteca y sus acciones */
+      .lib { position: absolute; inset: 0; }
+      .shelf { position: absolute; left: 70px; top: 330px; width: 620px; height: 22px; border-radius: 8px; background: #8a55ff; }
+      .bk { position: absolute; bottom: 270px; width: 66px; border-radius: 8px 8px 4px 4px; }
+      .b1 { left: 100px; height: 200px; background: #5bdcff; } .b2 { left: 180px; height: 170px; background: #b997ff; }
+      .b3 { left: 260px; height: 210px; background: #ffc45a; } .b4 { left: 340px; height: 180px; background: #ff7ab6; }
+      .b5 { left: 420px; height: 196px; background: #45e0a8; }
+      .bk.new { left: 560px; height: 190px; background: #f4f0ff; }
+      .sticky { position: absolute; left: 262px; top: 150px; width: 60px; height: 50px; border-radius: 6px; background: #ffe2ad; transform: rotate(-8deg); }
+      .act { position: absolute; left: 70px; top: 400px; display: flex; flex-wrap: wrap; gap: 12px; width: 640px; }
+      .act span { font-family: "JetMono"; font-weight: 800; font-size: 24px; padding: 8px 14px; border-radius: 12px; background: rgba(255,255,255,.08); color: #f4f0ff; }
+      .act span em { font-style: normal; font-family: "Figtree"; color: #c9bfe0; font-weight: 700; margin-left: 6px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="p05" data-start="0" data-duration="44" data-width="1920" data-height="1080" data-fps="30">
+      <div id="board">
+        <div class="mrow" id="r1"><span class="verb">GET</span><span class="what">Consultar</span><span class="ex">Ver los datos de un modelo: <code>GET /v1/models</code></span></div>
+        <div class="mrow" id="r2"><span class="verb">POST</span><span class="what">Enviar o crear</span><span class="ex">Pedirle al LLM una respuesta nueva</span></div>
+        <div class="mrow" id="r3"><span class="verb">PUT</span><span class="what">Reemplazar completo</span><span class="ex">Cambiar todo el perfil de Ana, de una vez</span></div>
+        <div class="mrow" id="r4"><span class="verb">PATCH</span><span class="what">Modificar una parte</span><span class="ex">Cambiar solo el correo de Ana</span></div>
+        <div class="mrow" id="r5"><span class="verb">DELETE</span><span class="what">Eliminar</span><span class="ex">Borrar un registro, si la API lo permite</span></div>
+
+        <div class="card green" id="ai"><span data-icon="bolt"></span><h3>Para la IA</h3><p>Generar una respuesta es crear algo nuevo</p>
+          <div class="paper">POST https://api.openai.com/v1/responses</div></div>
+        <div class="note green" id="note-ai">Tú envías datos: el modelo crea un texto.</div>
+      </div>
+    </div>
+    <script>
+      const T = Teacher.setup({
+        cls: 2, point: 5,
+        title: "Métodos <em>HTTP</em>: el verbo de tu pedido",
+        headTitle: "Métodos HTTP",
+        question: "No es lo mismo leer un dato que crearlo o borrarlo. ¿Cómo le dices al servidor qué quieres hacer?",
+        analogy: {
+          art: `<div class="lib">
+            <div class="bk b1"></div><div class="bk b2"></div><div class="bk b3"></div><div class="bk b4"></div><div class="bk b5"></div>
+            <div class="bk new"></div><div class="sticky"></div><div class="shelf"></div>
+            <div class="act"><span class="a1">GET<em>leer</em></span><span class="a2">POST<em>donar</em></span><span class="a3">PATCH<em>corregir</em></span><span class="a4">DELETE<em>retirar</em></span></div></div>`,
+          title: "Las acciones de una biblioteca",
+          text: "Puedes <em>consultar</em> un libro, <em>donar</em> uno nuevo, corregir una página o retirarlo. El método HTTP es el <em>verbo</em> que dice qué acción quieres.",
+        },
+        steps: [
+          { label: "GET", caption: "<em>GET</em> consulta información sin cambiar nada: por ejemplo, los datos de un modelo." },
+          { label: "POST", caption: "<em>POST</em> envía datos para crear algo: un registro nuevo o una respuesta del LLM." },
+          { label: "PUT y PATCH", caption: "<em>PUT</em> reemplaza el recurso completo; <em>PATCH</em> cambia solo una parte." },
+          { label: "DELETE", caption: "<em>DELETE</em> elimina un recurso, siempre que la API lo permita." },
+          { label: "Para la IA", caption: "Para generar respuestas de un modelo usamos <em>POST</em> sobre /v1/responses." },
+        ],
+        takeaway: {
+          title: "El método es el <em>verbo</em>: para pedirle una respuesta a la IA, <em>POST</em>.",
+          text: "GET consulta, POST crea, PUT reemplaza, PATCH modifica una parte y DELETE elimina.",
+        },
+      });
+
+      const s = T.stepAt;
+      // Analogía: leer, donar, corregir y retirar libros
+      T.tl.set([".t-analogy-art .bk.new", ".t-analogy-art .sticky", ".t-analogy-art .act span"], { opacity: 0 }, 0);
+      T.slide("@.t-analogy-art .bk:not(.new)", T.analogyAt(.3), { y: 40, stagger: .12 });
+      T.fadeIn("@.t-analogy-art .a1", T.analogyAt(1.4));
+      T.to("@.t-analogy-art .b1", T.analogyAt(1.5), { y: -40, duration: .4, yoyo: true, repeat: 1 });
+      T.fadeIn("@.t-analogy-art .a2", T.analogyAt(2.7));
+      T.slide("@.t-analogy-art .bk.new", T.analogyAt(2.8), { x: 120, y: 0 });
+      T.fadeIn("@.t-analogy-art .a3", T.analogyAt(4));
+      T.pop("@.t-analogy-art .sticky", T.analogyAt(4.1));
+      T.fadeIn("@.t-analogy-art .a4", T.analogyAt(5.3));
+      T.to("@.t-analogy-art .b4", T.analogyAt(5.4), { y: 120, opacity: 0, duration: .8 });
+
+      // Estados iniciales
+      T.tl.set(["#board .mrow", "#ai", "#note-ai"], { opacity: 0 }, 0);
+
+      const row = (i, sel, extra = 0) => { T.slide(sel, s(i, .2 + extra), { x: -40, y: 0 }); T.pulse(`${sel} .verb`, s(i, 1.1 + extra), 1.1); };
+      row(0, "#r1");
+      row(1, "#r2");
+      row(2, "#r3"); row(2, "#r4", 1.3);
+      row(3, "#r5");
+      T.glow("#r5", s(3, 2.2), "#ff5c78");
+
+      // Paso 5 · Para la IA
+      T.to("#r1, #r3, #r4, #r5", s(4, .1), { opacity: .35, boxShadow: "none", duration: .5 });
+      T.glow("#r2", s(4, .3), "#45e0a8");
+      T.pop("#ai", s(4, .6));
+      T.slide("#note-ai", s(4, 1.8), { y: 20 });
+
+      window.__timelines["p05"] = T.tl;
+    </script>
+  </body>
+</html>
