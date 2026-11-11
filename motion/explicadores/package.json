@@ -1,0 +1,9 @@
+{
+  "name": "explicadores-api-rest-ia",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "render": "node render-all.mjs",
+    "check": "for d in scenes/*/; do (cd \"$d\" && npx --yes hyperframes@0.8.186 check . >/dev/null && echo \"ok $d\" || echo \"FALLA $d\"); done"
+  }
+}

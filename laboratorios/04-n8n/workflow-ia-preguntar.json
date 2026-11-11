@@ -1,0 +1,211 @@
+{
+  "name": "Campuslands · IA preguntar (API REST)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ia-preguntar",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "ia-preguntar"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Valida la entrada antes de gastar tokens.\nconst entrada = $input.first().json.body ?? {};\nconst pregunta = entrada.pregunta;\n\nif (typeof pregunta !== \"string\" || !pregunta.trim() || pregunta.length > 2000) {\n  return [{ json: { valido: false, error: \"La pregunta es obligatoria, debe ser texto y tener máximo 2000 caracteres\" } }];\n}\n\nreturn [{ json: { valido: true, pregunta: pregunta.trim() } }];"
+      },
+      "id": "a1000000-0000-4000-8000-000000000002",
+      "name": "Validación",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000003",
+      "name": "¿Pregunta válida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/responses",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: \"gpt-6-luna\", instructions: \"Eres un tutor de IA. Responde en español.\", input: $json.pregunta, max_output_tokens: 500 } }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "a1000000-0000-4000-8000-000000000004",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "OpenAI Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Simplifica la respuesta del proveedor para el cliente.\nconst data = $input.first().json;\n\nif (data.status !== \"completed\") {\n  throw new Error(\"Respuesta incompleta del modelo\");\n}\n\nconst textos = (data.output ?? [])\n  .filter(item => item.type === \"message\")\n  .flatMap(item => item.content ?? [])\n  .filter(item => item.type === \"output_text\")\n  .map(item => item.text ?? \"\");\n\nreturn [{\n  json: {\n    respuesta: textos.join(\"\\n\").trim(),\n    modelo: data.model,\n    tokens: data.usage?.total_tokens ?? null\n  }\n}];"
+      },
+      "id": "a1000000-0000-4000-8000-000000000005",
+      "name": "Transformar respuesta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "a1000000-0000-4000-8000-000000000006",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { error: $json.error } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "a1000000-0000-4000-8000-000000000007",
+      "name": "Responder 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        420
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validación": {
+      "main": [
+        [
+          {
+            "node": "¿Pregunta válida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Pregunta válida?": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 400",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Transformar respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transformar respuesta": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
