@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="es" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>P10 · Tokens y costos</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="shared/teacher.css" />
+    <script src="shared/teacher.js"></script>
+    <style>
+      /* Pizarra: token → entrada y salida → cálculo (arriba) · optimizar (abajo) */
+      #board .card { top: 0; height: 424px; }
+      #board .card > h3 { padding-left: 36px; }
+      #c-tok { left: 0; width: 560px; }
+      #c-io { left: 590px; width: 540px; }
+      #c-calc { left: 1160px; width: 616px; }
+      .phrase { position: relative; display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+      .phrase span { padding: 10px 14px; border-radius: 12px; font-family: "JetMono", monospace; font-size: 30px; font-weight: 700; color: #062418; }
+      .phrase span:nth-child(4n+1) { background: #5bdcff; } .phrase span:nth-child(4n+2) { background: #45e0a8; }
+      .phrase span:nth-child(4n+3) { background: #ffc45a; } .phrase span:nth-child(4n) { background: #b997ff; }
+      .count { position: relative; margin-top: 16px; font-family: "Bricolage"; font-size: 40px; font-weight: 750; }
+      .count em { font-style: normal; color: var(--accent); }
+      .io { position: relative; display: flex; flex-direction: column; gap: 12px; width: 100%; margin-top: 4px; }
+      .io .r { display: flex; justify-content: space-between; align-items: center; padding: 10px 18px; border-radius: 16px; border: 2px solid; }
+      .io .r div b { display: block; font-size: 30px; }
+      .io .r div span { display: block; font-size: 24px; color: var(--ink-soft); }
+      .io .r strong { font-family: "Bricolage"; font-size: 40px; }
+      .io .in { border-color: #5bdcff; background: rgba(91,220,255,.1); } .io .in strong { color: #5bdcff; }
+      .io .out { border-color: #45e0a8; background: rgba(69,224,168,.1); } .io .out strong { color: #45e0a8; }
+      .io .ca { border-color: rgba(255,255,255,.2); border-style: dashed; }
+      #board .card .paper { position: relative; width: 100%; margin-top: 4px; font-size: 27px; line-height: 1.5; padding: 16px 22px; }
+      .paper .tot { display: inline-block; margin-top: 6px; padding: 2px 10px; border-radius: 8px; background: #ffc45a; font-weight: 800; }
+      .paper .tot2 { background: #45e0a8; }
+      #board #c-opt { left: 0; top: 456px; width: 1490px; height: 136px; flex-direction: row; align-items: center; gap: 16px; }
+      #c-opt h3 { padding-left: 36px; font-size: 34px; white-space: nowrap; }
+      #c-opt .tag { position: relative; height: 60px; font-size: 27px; }
+      #n1 { left: -14px; top: -18px; } #n2 { left: 576px; top: -18px; } #n3 { left: 1146px; top: -18px; } #n4 { left: -14px; top: 438px; }
+      #note-tok { left: 20px; top: 448px; max-width: 520px; }
+      /* Analogía: taxímetro */
+      .taxi { position: absolute; left: 110px; top: 70px; width: 540px; height: 480px; border-radius: 40px; background: #17131d; border: 4px solid #ffc45a; padding: 36px 40px; }
+      .taxi h4 { font-family: "Bricolage"; font-size: 34px; color: #ffc45a; text-align: center; }
+      .taxi .where { text-align: center; font-size: 24px; color: #c9bfe0; margin-top: 4px; }
+      .meter { margin-top: 30px; display: flex; flex-direction: column; gap: 16px; }
+      .meter div { display: flex; justify-content: space-between; align-items: center; padding: 14px 22px; border-radius: 16px; background: #050507; border: 2px solid rgba(255,196,90,.4); font-size: 28px; font-weight: 700; color: #c9bfe0; }
+      .meter b { font-family: "JetMono", monospace; font-size: 34px; color: #45e0a8; }
+      .meter .big b { font-size: 44px; color: #ffc45a; }
+      .meter .km b { display: inline-block; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="p10" data-start="0" data-duration="40" data-width="1920" data-height="1080" data-fps="30">
+      <div id="board">
+        <div class="card cyan" id="c-tok"><h3>Qué es un token</h3>
+          <p>Un pedazo de texto que el modelo procesa</p>
+          <div class="phrase"><span>Expl</span><span>ica</span><span>qué</span><span>es</span><span>una</span><span>vari</span><span>able</span><span>?</span></div>
+          <div class="count">5 palabras ≈ <em>8 tokens</em></div></div>
+
+        <div class="card accent" id="c-io"><h3>Entrada y salida</h3>
+          <div class="io">
+            <div class="r in"><div><b>Entrada</b><span>instrucciones + contexto + pregunta</span></div><strong>2.000</strong></div>
+            <div class="r out"><div><b>Salida</b><span>lo que escribe el modelo</span></div><strong>500</strong></div>
+            <div class="r ca"><div><b>En caché</b><span>contexto reutilizado, otra tarifa</span></div></div>
+          </div></div>
+
+        <div class="card yellow" id="c-calc"><h3>El cálculo</h3>
+          <p>Tarifas hipotéticas por millón de tokens</p>
+          <div class="paper"><span class="l1">2.000 × 0,50 / 1 M = 0,001</span><br><span class="l2">  500 × 2,00 / 1 M = 0,001</span><br><span class="l3">Por solicitud: <span class="tot">USD 0,002</span></span><br><span class="l4">× 100 solicitudes: <span class="tot tot2">USD 0,20</span></span></div></div>
+
+        <div class="card green" id="c-opt"><h3>Para gastar menos</h3>
+          <span class="tag green op">Solo el contexto relevante</span><span class="tag green op">max_output_tokens</span><span class="tag green op">Modelo acorde a la tarea</span></div>
+
+        <div class="num" id="n1">1</div><div class="num" id="n2">2</div><div class="num" id="n3">3</div><div class="num" id="n4">4</div>
+        <div class="note purple" id="note-tok">Cortes ilustrativos: cada tokenizador divide distinto.</div>
+      </div>
+    </div>
+    <script>
+      const T = Teacher.setup({
+        cls: 4, point: 10,
+        title: "¿Cuánto <em>cuesta</em> preguntarle al modelo?",
+        headTitle: "Tokens y costos",
+        question: "La API no cobra por mensaje ni por mes: cobra por tokens. Si sabes contarlos, sabes cuánto vas a pagar.",
+        analogy: {
+          art: `<div class="taxi"><h4>Taxi</h4><div class="where">Zona 10 → Zona 1</div>
+            <div class="meter"><div class="km">Recorrido <b>12 km</b></div><div>Tarifa <b>por km</b></div><div class="big">Total <b>a pagar</b></div></div></div>`,
+          title: "El taxímetro",
+          text: "En taxi pagas por lo que <em>recorres</em>. En la API pagas por <em>tokens</em>: lo que envías y lo que el modelo escribe.",
+        },
+        steps: [
+          { label: "El token", caption: "Un token <em>no es una palabra</em>: puede ser una palabra, una parte de ella o un signo." },
+          { label: "Entrada y salida", caption: "Se cuentan aparte: <em>entrada</em> (lo que envías) y <em>salida</em> (lo que genera). Suelen costar distinto." },
+          { label: "El cálculo", caption: "2.000 de entrada y 500 de salida: <em>USD 0,002</em> por solicitud; cien iguales, USD 0,20." },
+          { label: "Optimizar", caption: "Para gastar menos: envía solo lo <em>relevante</em>, limita la salida y elige un modelo acorde." },
+        ],
+        takeaway: {
+          title: "Pagas por <em>tokens</em> que entran y salen: mide, calcula y <em>recorta</em>.",
+          text: "usage te dice cuánto consumiste; max_output_tokens y un buen contexto lo controlan.",
+        },
+      });
+
+      const s = T.stepAt;
+      // Analogía: el taxímetro avanza
+      T.slide("@.taxi", T.analogyAt(.3), { y: 30 });
+      T.slide("@.meter div", T.analogyAt(1.2), { x: -24, y: 0, stagger: .6 });
+      T.pulse("@.meter .km b", T.analogyAt(3.4), 1.15);
+      T.pulse("@.meter .big", T.analogyAt(4.8), 1.05);
+
+      T.tl.set(["#board .card", "#board .num", "#board .note", "#board .phrase span", "#board .count", "#board .io .r", "#board .paper span", "#board .op"], { opacity: 0 }, 0);
+
+      // Paso 1 · Token
+      T.pop("#c-tok", s(0, .1)).pop("#n1", s(0, .35));
+      T.pop(".phrase span", s(0, .8), .16);
+      T.slide(".count", s(0, 2.3), { y: 14 });
+      T.slide("#note-tok", s(0, 2.0), { y: 20 });
+
+      // Paso 2 · Entrada y salida
+      T.pop("#c-io", s(1, .1)).pop("#n2", s(1, .35));
+      T.slide(".io .r", s(1, .8), { x: -20, y: 0, stagger: .7 });
+
+      // Paso 3 · Cálculo
+      T.pop("#c-calc", s(2, .1)).pop("#n3", s(2, .35));
+      T.slide(".paper .l1, .paper .l2", s(2, .7), { x: -16, y: 0, stagger: .6 });
+      T.fadeIn(".paper .l3, .paper .l3 .tot", s(2, 2.0), .4);
+      T.fadeIn(".paper .l4, .paper .l4 .tot", s(2, 3.0), .4);
+      T.pulse(".paper .l3 .tot", s(2, 2.5), 1.12);
+
+      // Paso 4 · Optimizar
+      T.fadeOut("#note-tok", s(3, 0));
+      T.pop("#c-opt", s(3, .1)).pop("#n4", s(3, .35));
+      T.pop(".op", s(3, .8), .45);
+
+      window.__timelines["p10"] = T.tl;
+    </script>
+  </body>
+</html>

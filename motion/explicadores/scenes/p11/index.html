@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="es" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>P11 · Flujo en n8n</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="shared/teacher.css" />
+    <script src="shared/teacher.js"></script>
+    <style>
+      /* Pizarra: cinco nodos de n8n en fila (arriba) · lo que viaja en cada paso (abajo) */
+      #board .node { top: 0; width: 316px; height: 262px; gap: 8px; padding: 22px 24px; }
+      #board .node h3 { font-size: 33px; }
+      #board .node p { font-size: 26px; }
+      #k1 { left: 0; } #k2 { left: 365px; } #k3 { left: 730px; } #k4 { left: 1095px; } #k5 { left: 1460px; }
+      #n1 { left: -14px; top: -18px; } #n2 { left: 351px; top: -18px; } #n3 { left: 716px; top: -18px; } #n4 { left: 1081px; top: -18px; } #n5 { left: 1446px; top: -18px; }
+      #k1, #k2, #k3, #k4, #k5 { padding-top: 34px; }
+      #tok { left: 226px; top: 170px; }
+      #board #detail { left: 0; top: 300px; width: 1460px; height: 284px; }
+      #detail .lbl { font-weight: 800; font-size: 24px; letter-spacing: .1em; text-transform: uppercase; color: var(--lavender); }
+      .blk { position: absolute; left: 28px; right: 28px; top: 66px; bottom: 24px; display: flex; flex-direction: column; justify-content: center; gap: 14px; }
+      .blk .paper { position: relative; font-size: 28px; padding: 18px 24px; }
+      .blk .rowt { display: flex; gap: 14px; align-items: center; }
+      .blk .tag { position: relative; height: 60px; font-size: 27px; }
+      .blk .say { position: relative; font-size: 30px; }
+      /* Analogía: estación de paquetería con banda */
+      .belt { position: absolute; left: 40px; right: 40px; top: 440px; height: 30px; border-radius: 15px; background: repeating-linear-gradient(90deg, #2b2338 0 30px, #3a3048 30px 60px); }
+      .st { position: absolute; top: 110px; width: 124px; height: 250px; border-radius: 18px; background: rgba(255,255,255,.06); border: 2px solid rgba(185,151,255,.35); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 14px; font-weight: 800; font-size: 26px; color: #c9bfe0; text-align: center; }
+      .st b { font-family: "Bricolage"; font-size: 44px; color: #ff7ab6; margin-bottom: auto; margin-top: 14px; }
+      .st1 { left: 40px; } .st2 { left: 180px; } .st3 { left: 320px; } .st4 { left: 460px; } .st5 { left: 600px; }
+      .pkg { position: absolute; left: 50px; top: 368px; width: 100px; height: 72px; border-radius: 8px; background: #c8925a; border: 3px solid #8a5a2e; }
+      .pkg::after { content: ""; position: absolute; left: 42px; top: 0; bottom: 0; width: 8px; background: #8a5a2e; }
+      .dest { position: absolute; left: 40px; right: 40px; top: 510px; text-align: center; font-size: 32px; font-weight: 750; color: #45e0a8; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="p11" data-start="0" data-duration="44" data-width="1920" data-height="1080" data-fps="30">
+      <div id="board">
+        <svg class="wires" viewBox="0 0 1776 600">
+          <path class="w1" pathLength="1" d="M318 134H363" />
+          <path class="w2" pathLength="1" d="M683 134H728" />
+          <path class="w3" pathLength="1" d="M1048 134H1093" />
+          <path class="w4" pathLength="1" d="M1413 134H1458" />
+        </svg>
+
+        <div class="card node cyan" id="k1"><span data-icon="plug"></span><h3>Webhook</h3><p>Recibe la pregunta</p></div>
+        <div class="card node yellow" id="k2"><span data-icon="filter"></span><h3>Code: validar</h3><p>Revisa los datos</p></div>
+        <div class="card node accent" id="k3"><span data-icon="globe"></span><h3>HTTP Request</h3><p>Llama a la API</p></div>
+        <div class="card node yellow" id="k4"><span data-icon="wrench"></span><h3>Code: extraer</h3><p>Limpia la respuesta</p></div>
+        <div class="card node green" id="k5"><span data-icon="return"></span><h3>Respond to Webhook</h3><p>Devuelve el JSON</p></div>
+
+        <div class="card" id="detail"><span class="lbl">Lo que viaja en este paso</span>
+          <div class="blk b1"><div class="paper">POST /webhook/ia-preguntar<br>{ "pregunta": "¿Qué es un embedding?" }</div></div>
+          <div class="blk b2"><div class="rowt"><span class="tag green" data-icon="check" data-icon-class="ic">Es texto</span><span class="tag green" data-icon="check" data-icon-class="ic">No está vacía</span><span class="tag green" data-icon="check" data-icon-class="ic">Máximo 2000 caracteres</span></div><div class="say">Si falla, el flujo responde 400 y no gasta tokens.</div></div>
+          <div class="blk b3"><div class="paper">POST https://api.openai.com/v1/responses<br>Credencial Header Auth → Authorization: Bearer ••••</div></div>
+          <div class="blk b4"><div class="paper">{ "respuesta": "Un embedding es…",<br>  "modelo": "gpt-6-luna", "tokens": 125 }</div></div>
+          <div class="blk b5"><div class="rowt"><span class="tag green">200 · respuesta lista</span><span class="tag yellow">400 · pregunta inválida</span><span class="tag red">502 / 503 · proveedor caído</span></div><div class="say">Cada salida tiene su código: el cliente sabe qué pasó.</div></div>
+        </div>
+
+        <div class="num" id="n1">1</div><div class="num" id="n2">2</div><div class="num" id="n3">3</div><div class="num" id="n4">4</div><div class="num" id="n5">5</div>
+        <div class="token round" id="tok"><span data-icon="box" data-icon-class="ic sm"></span></div>
+      </div>
+    </div>
+    <script>
+      const T = Teacher.setup({
+        cls: 4, point: 11,
+        title: "¿Y si lo armamos <em>sin servidor propio</em>?",
+        headTitle: "Flujo en n8n",
+        question: "En n8n el mismo viaje se arma con nodos: recibe la pregunta, la valida, llama al modelo y devuelve la respuesta.",
+        analogy: {
+          art: `<div class="st st1"><b>1</b>Recibe</div><div class="st st2"><b>2</b>Revisa</div><div class="st st3"><b>3</b>Envía</div><div class="st st4"><b>4</b>Empaca</div><div class="st st5"><b>5</b>Entrega</div>
+            <div class="belt"></div><div class="pkg"></div><div class="dest">Paquete entregado en Xela</div>`,
+          title: "Una banda de paquetería",
+          text: "Cada estación hace <em>una sola tarea</em> y pasa el paquete a la siguiente. En n8n cada estación es un <em>nodo</em>.",
+        },
+        steps: [
+          { label: "Webhook", caption: "Andrea, desde Xela, envía <em>POST /ia-preguntar</em> con su pregunta en JSON." },
+          { label: "Validar", caption: "Un nodo Code revisa que la pregunta <em>no esté vacía</em> y tenga máximo 2000 caracteres." },
+          { label: "HTTP Request", caption: "Llama a /v1/responses con la clave guardada en <em>credenciales de n8n</em>, no en el nodo." },
+          { label: "Extraer", caption: "Otro Code saca solo lo útil: <em>respuesta, modelo y tokens</em>. El cliente recibe algo simple." },
+          { label: "Responder", caption: "Respond to Webhook devuelve el JSON: <em>200</em> si todo salió bien, 400 o 502/503 si no." },
+        ],
+        takeaway: {
+          title: "Recibe, valida, llama, limpia y <em>responde</em>: el mismo viaje, en nodos.",
+          text: "La clave vive en las credenciales de n8n y cada error tiene su propio código.",
+        },
+      });
+
+      const s = T.stepAt;
+      // Analogía: el paquete recorre las estaciones
+      T.pop("@.st", T.analogyAt(.3), .15);
+      T.fadeIn("@.belt, @.pkg", T.analogyAt(.9), .4);
+      T.to("@.pkg", T.analogyAt(1.4), { x: 560, duration: 4.2, ease: "none" });
+      T.slide("@.dest", T.analogyAt(5.8), { y: 14 });
+
+      T.tl.set(["#board .node", "#board .num", "#tok", "#detail", "#board .blk"], { opacity: 0 }, 0);
+
+      const nodes = ["#k1", "#k2", "#k3", "#k4", "#k5"];
+      const nums = ["#n1", "#n2", "#n3", "#n4", "#n5"];
+      const tokX = [0, 365, 730, 1095, 1460];
+      nodes.forEach((k, i) => {
+        if (i > 0) T.draw(`.w${i}`, s(i, .05), .45);
+        T.pop(k, s(i, .15)).pop(nums[i], s(i, .4));
+        if (i > 0) {
+          T.to("#tok", s(i, .5), { x: tokX[i], duration: .8 });
+          T.fadeOut(`.b${i}`, s(i, .1), 0, .3);
+        }
+        T.fadeIn(`.b${i + 1}`, s(i, .9), .5);
+        T.glow(k, s(i, 1.0));
+      });
+      T.fadeIn("#detail", s(0, .6), .4);
+      T.pop("#tok", s(0, .7));
+      T.to("#tok", s(4, 1.3), { scale: .3, opacity: 0, duration: .5 });
+
+      window.__timelines["p11"] = T.tl;
+    </script>
+  </body>
+</html>

@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="es" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>P07 · Autenticación con API Key</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="shared/teacher.css" />
+    <script src="shared/teacher.js"></script>
+    <style>
+      /* Pizarra: panel → entorno → header (arriba) · nunca expuesta + facturación (abajo) */
+      #c-panel { left: 0; top: 30px; width: 440px; height: 262px; }
+      #c-env { left: 500px; top: 30px; width: 560px; height: 262px; }
+      #c-head { left: 1120px; top: 30px; width: 656px; height: 262px; }
+      #board .card .paper { position: relative; margin-top: 4px; font-size: 26px; padding: 14px 18px; width: 100%; }
+      .key { display: inline-block; padding: 2px 10px; border-radius: 8px; background: #1b1426; color: #ffc45a; }
+      .ok-line { color: #0c7a55; font-weight: 800; }
+      #c-never { left: 0; top: 330px; width: 800px; height: 250px; }
+      .nevers { position: relative; display: flex; gap: 16px; margin-top: 8px; }
+      .nevers .tag { position: relative; height: 62px; font-size: 26px; }
+      #c-bill { left: 850px; top: 330px; width: 600px; height: 250px; }
+      .bill { position: relative; display: flex; align-items: center; gap: 18px; margin-top: 6px; }
+      .bill .tag { position: relative; height: 58px; font-size: 24px; }
+      .bill .neq { font-family: "Bricolage"; font-size: 54px; font-weight: 800; color: var(--yellow); }
+      #n1 { left: -14px; top: 12px; } #n2 { left: 486px; top: 12px; } #n3 { left: 1106px; top: 12px; }
+      #n4 { left: -14px; top: 312px; } #n5 { left: 836px; top: 312px; }
+      #tok { left: 400px; top: 118px; }
+      #note-env { left: 520px; top: 320px; max-width: 520px; }
+      #note-head { left: 1140px; top: 320px; max-width: 520px; }
+      /* Analogía: gafete y lector de la puerta */
+      .lobby { position: absolute; inset: 0; }
+      .door { position: absolute; right: 40px; top: 110px; width: 200px; height: 440px; border-radius: 18px 18px 0 0; border: 4px solid rgba(255,255,255,.22); background: linear-gradient(180deg, #1d1629, #0d0b13); }
+      .door::after { content: ""; position: absolute; left: 24px; top: 210px; width: 18px; height: 18px; border-radius: 50%; background: #8f86a3; }
+      .door-label { position: absolute; z-index: 3; right: 20px; top: 50px; width: 240px; text-align: center; font-weight: 800; font-size: 26px; color: #c9bfe0; letter-spacing: .08em; text-transform: uppercase; }
+      .reader { position: absolute; left: 390px; top: 250px; width: 110px; height: 150px; border-radius: 18px; background: #24182f; border: 3px solid rgba(255,255,255,.25); }
+      .reader i { position: absolute; left: 35px; top: 18px; width: 40px; height: 14px; border-radius: 8px; background: #ff5c78; }
+      .reader i.on { background: #45e0a8; box-shadow: 0 0 30px #45e0a8; opacity: 0; }
+      .badge { position: absolute; left: 40px; top: 150px; width: 280px; height: 380px; border-radius: 26px; background: #f4f0ff; color: #17131d; padding: 70px 26px 24px; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+      .badge::before { content: ""; position: absolute; left: 105px; top: 22px; width: 70px; height: 14px; border-radius: 8px; background: #b9b0c9; }
+      .badge .photo { width: 110px; height: 110px; border-radius: 50%; background: linear-gradient(145deg, #7a3cff, #b997ff); margin: 0 auto 18px; }
+      .badge b { display: block; text-align: center; font-family: "Bricolage"; font-size: 34px; }
+      .badge small { display: block; text-align: center; font-size: 22px; color: #4b4358; margin-top: 6px; }
+      .badge .lvl { display: block; margin-top: 18px; text-align: center; padding: 8px; border-radius: 12px; background: #7a3cff; color: #fff; font-weight: 800; font-size: 22px; }
+      .open { position: absolute; left: 300px; top: 556px; font-weight: 800; font-size: 30px; color: #45e0a8; opacity: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="p07" data-start="0" data-duration="44" data-width="1920" data-height="1080" data-fps="30">
+      <div id="board">
+        <svg class="wires" viewBox="0 0 1776 600">
+          <path class="w1" pathLength="1" d="M444 160H496" />
+          <path class="w2" pathLength="1" d="M1064 160H1116" />
+        </svg>
+
+        <div class="card cyan" id="c-panel"><span data-icon="key"></span><h3>Panel del proveedor</h3>
+          <div class="paper">Crear nueva clave<br><span class="key">sk-proj-••••4f2a</span></div></div>
+
+        <div class="card green" id="c-env"><span data-icon="lock"></span><h3>Variable de entorno</h3>
+          <div class="paper">export OPENAI_API_KEY="sk-…"<br><span class="ok-line">Clave configurada</span></div></div>
+
+        <div class="card accent" id="c-head"><span data-icon="doc"></span><h3>Header de cada solicitud</h3>
+          <div class="paper">POST /v1/responses<br><b>Authorization:</b> Bearer $OPENAI_API_KEY</div></div>
+
+        <div class="card red" id="c-never"><span data-icon="stop"></span><h3>Nunca la dejes en…</h3>
+          <div class="nevers">
+            <span class="tag red nv" data-icon="x" data-icon-class="ic">Repositorio Git</span>
+            <span class="tag red nv" data-icon="x" data-icon-class="ic">Capturas</span>
+            <span class="tag red nv" data-icon="x" data-icon-class="ic">El navegador</span>
+          </div></div>
+
+        <div class="card yellow" id="c-bill"><span data-icon="tag"></span><h3>Son cuentas distintas</h3>
+          <div class="bill">
+            <span class="tag cyan b1">ChatGPT Plus</span><span class="neq">≠</span><span class="tag yellow b2">API por tokens</span>
+          </div></div>
+
+        <div class="num" id="n1">1</div><div class="num" id="n2">2</div><div class="num" id="n3">3</div>
+        <div class="num" id="n4">4</div><div class="num" id="n5">5</div>
+        <div class="token round yellow" id="tok"><span data-icon="key" data-icon-class="ic sm"></span></div>
+        <div class="note green" id="note-env">Se lee con os.getenv o process.env, no se escribe en el código.</div>
+        <div class="note purple" id="note-head">La palabra Bearer va antes de la clave, separada por un espacio.</div>
+      </div>
+    </div>
+    <script>
+      const T = Teacher.setup({
+        cls: 2, point: 7,
+        title: "¿Cómo sabe la API <em>quién</em> le habla?",
+        headTitle: "Autenticación con API Key",
+        question: "Cada solicitud llega con una credencial secreta. Sin ella, el proveedor responde 401 y no hace nada.",
+        analogy: {
+          art: `<div class="lobby"><div class="door-label">Piso 3</div><div class="door"></div>
+            <div class="reader"><i></i><i class="on"></i></div>
+            <div class="badge"><div class="photo"></div><b>Diego Pérez</b><small>Campuslands · Zona 4</small><span class="lvl">Acceso: Piso 3</span></div>
+            <div class="open">Acceso concedido</div></div>`,
+          title: "El gafete de un edificio",
+          text: "Para pasar la puerta acercas tu <em>gafete</em> al lector. La API Key funciona igual: la presentas en <em>cada solicitud</em> y es personal, no se presta.",
+        },
+        steps: [
+          { label: "Crear la clave", caption: "Diego crea su clave en el <em>panel del proveedor</em>. Se muestra una sola vez: cópiala con cuidado." },
+          { label: "Guardarla", caption: "La guarda en una <em>variable de entorno</em>, OPENAI_API_KEY, fuera del código del proyecto." },
+          { label: "Enviarla", caption: "Viaja en el header <em>Authorization: Bearer</em> de cada solicitud al endpoint /v1/responses." },
+          { label: "Protegerla", caption: "Nunca en Git, en capturas ni en el JavaScript del <em>navegador</em>: cualquiera podría usarla." },
+          { label: "Facturación", caption: "Pagar ChatGPT <em>no incluye</em> la API: la API se cobra aparte, según los tokens usados." },
+        ],
+        takeaway: {
+          title: "La API Key es tu <em>gafete</em>: se presenta en cada solicitud y <em>nunca se presta</em>.",
+          text: "Créala en el panel, guárdala en el entorno y envíala como Authorization: Bearer.",
+        },
+      });
+
+      const s = T.stepAt;
+      // Analogía: el gafete se acerca al lector y la luz pasa a verde
+      T.slide("@.t-analogy-art .badge", T.analogyAt(.5), { x: -40, y: 0 });
+      T.to("@.t-analogy-art .badge", T.analogyAt(3), { x: 90, y: 40, rotation: -6, duration: 1.1 });
+      T.fadeIn("@.t-analogy-art .reader i.on", T.analogyAt(4.2), .3);
+      T.slide("@.t-analogy-art .open", T.analogyAt(4.5), { y: 16 });
+      T.to("@.t-analogy-art .badge", T.analogyAt(6.2), { x: 0, y: 0, rotation: 0, duration: .9 });
+
+      T.tl.set(["#board .card", "#board .num", "#tok", "#board .note", "#board .nv", "#board .b1", "#board .b2", "#board .neq"], { opacity: 0 }, 0);
+
+      // Paso 1 · Panel
+      T.pop("#c-panel", s(0, .1)).pop("#n1", s(0, .35));
+      T.pulse("#c-panel .key", s(0, 1.4), 1.12);
+      T.pop("#tok", s(0, 2.2));
+
+      // Paso 2 · Entorno
+      T.draw(".w1", s(1, .05), .5);
+      T.pop("#c-env", s(1, .2)).pop("#n2", s(1, .45));
+      T.to("#tok", s(1, .6), { x: 620, duration: 1 });
+      T.slide("#note-env", s(1, 1.7), { y: 20 });
+
+      // Paso 3 · Header
+            T.draw(".w2", s(2, .05), .5);
+      T.pop("#c-head", s(2, .2)).pop("#n3", s(2, .45));
+      T.to("#tok", s(2, .6), { x: 1060, duration: 1 });
+      T.to("#tok", s(2, 1.7), { scale: .4, opacity: 0, duration: .5 });
+      T.glow("#c-head", s(2, 1.8));
+      T.slide("#note-head", s(2, 2.0), { y: 20 });
+
+      // Paso 4 · Nunca expuesta
+      T.fadeOut("#note-env", s(3, 0));
+      T.pop("#c-never", s(3, .15)).pop("#n4", s(3, .4));
+      T.pop(".nv", s(3, .9), .4);
+      T.glow("#c-never", s(3, 2.6), "#ff5c78");
+
+      // Paso 5 · Facturación
+      T.fadeOut("#note-head", s(4, 0));
+      T.pop("#c-bill", s(4, .15)).pop("#n5", s(4, .4));
+      T.slide(".b1", s(4, .9), { x: -20, y: 0 });
+      T.pop(".neq", s(4, 1.5));
+      T.slide(".b2", s(4, 1.9), { x: 20, y: 0 });
+      T.pulse(".neq", s(4, 2.8), 1.3);
+
+      window.__timelines["p07"] = T.tl;
+    </script>
+  </body>
+</html>

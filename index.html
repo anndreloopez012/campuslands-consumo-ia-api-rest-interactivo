@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Laboratorio interactivo de Campuslands: consumo de modelos de Inteligencia Artificial mediante una API RESTful. HTTP, endpoints, autenticación, JSON, errores, tokens y laboratorios con cURL, Python, JavaScript y n8n." />
+    <meta name="theme-color" content="#14121a" />
+    <title>Estación API · Consumo de modelos de IA por API REST | Campuslands</title>
+    <link rel="preload" href="assets/fonts/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="assets/fonts/figtree-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2314121a'/%3E%3Cpath d='M14 32h12M38 32h12' stroke='%235bdcff' stroke-width='6' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%23ffc45a'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="styles.css?v=2" />
+  </head>
+  <body>
+    <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+    <header class="topbar">
+      <a class="brand" href="#inicio" aria-label="Ir al inicio">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48"><path d="M6 24h11M31 24h11" /><circle cx="24" cy="24" r="6" /><path d="M24 6v6M24 36v6" /></svg>
+        </span>
+        <span class="brand__text">
+          <small>Campuslands · Formación en IA Generativa</small>
+          <strong>Estación API <em>/ consumo de modelos de IA</em></strong>
+        </span>
+      </a>
+
+      <div class="session-tools" aria-label="Herramientas de la sesión">
+        <div class="xp" title="Puntos de experiencia">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.6 6.3L21 9l-5 4.4L17.5 20 12 16.6 6.5 20 8 13.4 3 9l6.4-.7z" /></svg>
+          <span><b id="xpValue">0</b> XP</span>
+        </div>
+        <div class="timer" aria-label="Cronómetro de la sesión">
+          <span class="timer__pulse" aria-hidden="true"></span>
+          <span id="timerDisplay" class="timer__time" aria-live="polite">60:00</span>
+          <button id="timerToggle" class="icon-button" type="button" aria-label="Iniciar cronómetro" title="Iniciar cronómetro">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z" /></svg>
+          </button>
+          <button id="timerReset" class="icon-button" type="button" aria-label="Reiniciar cronómetro" title="Reiniciar cronómetro">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.34 5.66M20 4v7h-7" /></svg>
+          </button>
+        </div>
+        <button id="focusToggle" class="pill-button" type="button" aria-pressed="false" title="Modo proyector: letra grande y sin menú">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M8 21H3v-5m13 5h5v-5" /></svg>
+          <span>Modo proyector</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="shell">
+      <aside class="sidebar" aria-label="Ruta de la guía">
+        <div class="progress-card">
+          <div class="progress-card__head"><span>Tu progreso</span><strong id="progressLabel">0%</strong></div>
+          <div class="progress-track" aria-hidden="true"><span id="progressBar"></span></div>
+          <p id="progressMessage">10 estaciones. Una app que le habla a un modelo de IA.</p>
+        </div>
+        <nav class="route" aria-label="Estaciones">
+          <a href="#inicio" data-nav="inicio"><i>00</i><span><strong>Bienvenida</strong><small>Qué vas a lograr</small></span></a>
+          <a href="#fundamentos" data-nav="fundamentos"><i>01</i><span><strong>API y REST</strong><small>Cliente, backend y proveedor</small></span></a>
+          <a href="#endpoint" data-nav="endpoint"><i>02</i><span><strong>Endpoints y métodos</strong><small>La dirección y el verbo</small></span></a>
+          <a href="#solicitud" data-nav="solicitud"><i>03</i><span><strong>Arma tu solicitud</strong><small>Simulador en vivo</small></span></a>
+          <a href="#seguridad" data-nav="seguridad"><i>04</i><span><strong>API Key y seguridad</strong><small>La clave nunca viaja al navegador</small></span></a>
+          <a href="#json" data-nav="json"><i>05</i><span><strong>Leer el JSON</strong><small>Encuentra el texto generado</small></span></a>
+          <a href="#laboratorios" data-nav="laboratorios"><i>06</i><span><strong>Laboratorios</strong><small>cURL · Python · JS · n8n</small></span></a>
+          <a href="#errores" data-nav="errores"><i>07</i><span><strong>Errores y reintentos</strong><small>Códigos HTTP y backoff</small></span></a>
+          <a href="#tokens" data-nav="tokens"><i>08</i><span><strong>Tokens y costos</strong><small>El taxímetro del modelo</small></span></a>
+          <a href="#proyecto" data-nav="proyecto"><i>09</i><span><strong>Proyecto integrador</strong><small>Asistente de programación</small></span></a>
+          <a href="#reto" data-nav="reto"><i>10</i><span><strong>Reto final</strong><small>10 preguntas · glosario</small></span></a>
+        </nav>
+        <button class="ghost-button" type="button" data-reset-progress>Reiniciar progreso</button>
+      </aside>
+
+      <main id="contenido">
+        <!-- ============ 00 · BIENVENIDA ============ -->
+        <section id="inicio" class="station hero" data-station="inicio">
+          <div class="hero__copy">
+            <span class="eyebrow">Guía teórico-práctica · nivel básico–intermedio</span>
+            <h1>Tu app le escribe a un <em>modelo de IA</em>. Aprende el idioma en que lo hace.</h1>
+            <p class="lead">
+              Las apps no instalan un modelo gigante: le <strong>envían una solicitud HTTP</strong> a un servicio que lo ejecuta y reciben la respuesta en <strong>JSON</strong>. Aquí vas a ver, tocar y romper cada pieza de esa conversación: endpoint, método, encabezados, API Key, cuerpo, respuesta, errores y tokens.
+            </p>
+            <div class="hero__actions">
+              <button class="primary-button" type="button" data-start-lab>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z" /></svg>
+                <span>Empezar la sesión</span>
+              </button>
+              <a class="text-link" href="#solicitud">Ir directo al simulador</a>
+            </div>
+            <ul class="hero__facts">
+              <li><b>11</b><span>videos animados, uno por concepto</span></li>
+              <li><b>8</b><span>simuladores para practicar sin clave</span></li>
+              <li><b>4</b><span>laboratorios: cURL, Python, JS y n8n</span></li>
+            </ul>
+          </div>
+
+          <figure class="wire-map" aria-label="Animación: la pregunta viaja del cliente al backend y al proveedor de IA, y la respuesta regresa">
+            <svg viewBox="0 0 520 470" role="img">
+              <defs>
+                <path id="viaIda" d="M110 92 C 250 92, 260 235, 260 235 S 270 378, 410 378" />
+                <path id="viaVuelta" d="M410 378 C 270 378, 260 235, 260 235 S 250 92, 110 92" />
+              </defs>
+              <path class="wire-map__track" d="M110 92 C 250 92, 260 235, 260 235 S 270 378, 410 378" />
+              <g class="node node--client" transform="translate(28 46)">
+                <rect width="164" height="92" rx="20" />
+                <text x="82" y="40" class="node__title">Cliente</text>
+                <text x="82" y="66" class="node__sub">web · móvil · consola</text>
+              </g>
+              <g class="node node--backend" transform="translate(178 189)">
+                <rect width="164" height="92" rx="20" />
+                <text x="82" y="40" class="node__title">Tu backend</text>
+                <text x="82" y="66" class="node__sub">guarda la API Key</text>
+              </g>
+              <g class="node node--provider" transform="translate(328 332)">
+                <rect width="164" height="92" rx="20" />
+                <text x="82" y="40" class="node__title">Proveedor IA</text>
+                <text x="82" y="66" class="node__sub">ejecuta el LLM</text>
+              </g>
+              <g class="packet packet--req">
+                <rect x="-58" y="-17" width="116" height="34" rx="17" />
+                <text y="6">POST · JSON</text>
+                <animateMotion dur="6s" repeatCount="indefinite" keyPoints="0;1;1" keyTimes="0;0.45;1" calcMode="linear"><mpath href="#viaIda" /></animateMotion>
+                <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.05;0.42;0.47;1" dur="6s" repeatCount="indefinite" />
+              </g>
+              <g class="packet packet--res">
+                <rect x="-50" y="-17" width="100" height="34" rx="17" />
+                <text y="6">200 · texto</text>
+                <animateMotion dur="6s" repeatCount="indefinite" keyPoints="0;0;1" keyTimes="0;0.5;0.95" calcMode="linear"><mpath href="#viaVuelta" /></animateMotion>
+                <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.5;0.55;0.92;1" dur="6s" repeatCount="indefinite" />
+              </g>
+            </svg>
+            <img class="wire-map__orbit" src="assets/img/orbit.png" alt="" width="180" height="180" />
+            <figcaption>La pregunta viaja por <b>HTTPS</b>; la clave se queda en el backend.</figcaption>
+          </figure>
+
+          <div class="outcomes">
+            <h2 class="section-title">Al terminar vas a poder…</h2>
+            <ol class="outcomes__list">
+              <li><b>RA 1</b> Explicar qué es una API RESTful y por qué la usamos para hablar con un LLM.</li>
+              <li><b>RA 2</b> Reconocer endpoint, método, encabezados, autenticación y cuerpo de una solicitud.</li>
+              <li><b>RA 3</b> Construir solicitudes HTTP para pedirle algo a un modelo.</li>
+              <li><b>RA 4</b> Leer la respuesta JSON, encontrar el texto y el consumo de tokens.</li>
+              <li><b>RA 5</b> Implementarlo con cURL, Python, JavaScript y n8n.</li>
+              <li><b>RA 6</b> Validar, controlar errores y proteger la clave.</li>
+              <li><b>RA 7</b> Construir un asistente que recibe una pregunta y muestra la respuesta.</li>
+            </ol>
+          </div>
+          <button class="checkpoint" type="button" data-checkpoint="inicio"><span class="checkpoint__box"></span><span>Listo, entiendo la meta de la sesión</span></button>
+        </section>
+
+        <!-- ============ 01 · API Y REST ============ -->
+        <section id="fundamentos" class="station" data-station="fundamentos">
+          <header class="station__head">
+            <span class="station__num">01</span>
+            <div>
+              <span class="eyebrow">Fundamentos · RA 1</span>
+              <h2>¿Qué es una API y por qué la usamos con la IA?</h2>
+              <p>Una <strong>API</strong> (Application Programming Interface) es un conjunto de reglas para que dos programas conversen. Tu app no entra a la base de datos de nadie ni instala el modelo: <strong>pide</strong> algo siguiendo las reglas y <strong>recibe</strong> una respuesta.</p>
+            </div>
+          </header>
+
+          <div class="explainer-row">
+            <figure class="explainer" data-explainer="p01"></figure>
+            <div class="concept-stack">
+              <article class="concept">
+                <h3>Ejemplo de todos los días</h3>
+                <p>Una app del clima no tiene estación meteorológica: le pregunta a un <strong>servicio del clima</strong> por su API. Con la IA es igual: tu app envía una instrucción a un servicio que ejecuta un <strong>LLM</strong> (modelo de lenguaje de gran escala) y recibe el resultado.</p>
+              </article>
+              <article class="concept concept--accent">
+                <h3>REST, en una frase</h3>
+                <p><strong>REST</strong> es un estilo para diseñar APIs: cada recurso tiene una <strong>URL</strong>, se usan <strong>métodos</strong> estándar (GET, POST…) y cada solicitud lleva todo lo necesario (<strong>sin estado</strong>).</p>
+                <p class="note">Ojo: <code>POST /responses</code> es una API HTTP de <em>inferencia</em>. Se parece a REST, pero no cumple todos sus principios. En la guía usamos ambos términos y señalamos la diferencia.</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="explainer-row explainer-row--flip">
+            <figure class="explainer" data-explainer="p02"></figure>
+            <div class="rest-cards">
+              <button class="flip-card" type="button"><span class="flip-card__front"><b>Recursos con URL</b><small>Toca para ver</small></span><span class="flip-card__back">Cada cosa tiene su dirección: <code>/v1/responses</code>, <code>/v1/models</code>.</span></button>
+              <button class="flip-card" type="button"><span class="flip-card__front"><b>Interfaz uniforme</b><small>Toca para ver</small></span><span class="flip-card__back">Los mismos verbos (GET, POST…) y el mismo formato (JSON) para todo.</span></button>
+              <button class="flip-card" type="button"><span class="flip-card__front"><b>Sin estado</b><small>Toca para ver</small></span><span class="flip-card__back">El servidor no "recuerda" tu solicitud anterior: cada una trae su clave, su modelo y su pregunta.</span></button>
+              <button class="flip-card" type="button"><span class="flip-card__front"><b>Representaciones</b><small>Toca para ver</small></span><span class="flip-card__back">Los datos viajan como texto estructurado: casi siempre <code>application/json</code>.</span></button>
+            </div>
+          </div>
+
+          <div class="explainer-row">
+            <figure class="explainer" data-explainer="p03"></figure>
+            <div class="concept-stack">
+              <h3 class="mini-title">Juego: ¿quién hace qué?</h3>
+              <p class="muted">Arrastra o toca cada tarea y luego toca el componente que la hace.</p>
+              <div class="sorter" id="sorter">
+                <div class="sorter__chips" id="sorterChips"></div>
+                <div class="sorter__bins">
+                  <button class="bin" type="button" data-bin="cliente"><b>Cliente</b><small>web, móvil, escritorio</small><span class="bin__items"></span></button>
+                  <button class="bin" type="button" data-bin="backend"><b>Backend</b><small>Python, Node.js, Java…</small><span class="bin__items"></span></button>
+                  <button class="bin" type="button" data-bin="proveedor"><b>Proveedor IA</b><small>API del modelo</small><span class="bin__items"></span></button>
+                </div>
+                <p class="feedback" id="sorterFeedback" aria-live="polite"></p>
+              </div>
+            </div>
+          </div>
+          <button class="checkpoint" type="button" data-checkpoint="fundamentos"><span class="checkpoint__box"></span><span>Entiendo cliente, backend y proveedor</span></button>
+        </section>
+
+        <!-- ============ 02 · ENDPOINTS Y MÉTODOS ============ -->
+        <section id="endpoint" class="station" data-station="endpoint">
+          <header class="station__head">
+            <span class="station__num">02</span>
+            <div>
+              <span class="eyebrow">La solicitud · RA 2</span>
+              <h2>El endpoint es la dirección. El método es el verbo.</h2>
+              <p>Un <strong>endpoint</strong> es la URL de una operación concreta de la API. El <strong>método HTTP</strong> le dice al servidor qué quieres hacer con ella.</p>
+            </div>
+          </header>
+
+          <div class="explainer-row">
+            <figure class="explainer" data-explainer="p04"></figure>
+            <div class="concept-stack">
+              <h3 class="mini-title">Desarma la URL</h3>
+              <p class="muted">Toca cada parte.</p>
+              <div class="url-dissect" id="urlDissect">
+                <button type="button" data-part="protocolo">https://</button><button type="button" data-part="dominio">api.openai.com</button><button type="button" data-part="version">/v1</button><button type="button" data-part="recurso">/responses</button>
+              </div>
+              <div class="part-card" id="partCard" aria-live="polite">
+                <b>Elige una parte</b>
+                <p>Cada pedazo de la URL tiene una función.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="explainer-row explainer-row--flip">
+            <figure class="explainer" data-explainer="p05"></figure>
+            <div class="concept-stack">
+              <h3 class="mini-title">¿Qué método usarías?</h3>
+              <div class="method-quiz" id="methodQuiz"></div>
+              <table class="table">
+                <thead><tr><th>Método</th><th>Función habitual</th><th>Ejemplo</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="verb verb--get">GET</span></td><td>Consultar información</td><td>Detalles de un modelo</td></tr>
+                  <tr><td><span class="verb verb--post">POST</span></td><td>Enviar datos o crear</td><td>Pedirle una respuesta al LLM</td></tr>
+                  <tr><td><span class="verb verb--put">PUT</span></td><td>Crear o reemplazar</td><td>Reemplazar un recurso completo</td></tr>
+                  <tr><td><span class="verb verb--patch">PATCH</span></td><td>Modificar una parte</td><td>Cambiar algunos campos</td></tr>
+                  <tr><td><span class="verb verb--delete">DELETE</span></td><td>Eliminar</td><td>Borrar un registro</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <button class="checkpoint" type="button" data-checkpoint="endpoint"><span class="checkpoint__box"></span><span>Sé leer un endpoint y elegir el método</span></button>
+        </section>
+
+        <!-- ============ 03 · SIMULADOR DE SOLICITUD ============ -->
+        <section id="solicitud" class="station" data-station="solicitud">
+          <header class="station__head">
+            <span class="station__num">03</span>
+            <div>
+              <span class="eyebrow">La solicitud · RA 2 y RA 3</span>
+              <h2>Arma tu solicitud y envíala</h2>
+              <p>Una solicitud tiene <strong>método + URL</strong>, <strong>encabezados</strong> (metadatos como la autenticación y el formato) y un <strong>cuerpo JSON</strong>. Rómpela a propósito: quita la clave, cambia el método o deja la pregunta vacía y mira qué responde el servidor.</p>
+            </div>
+          </header>
+
+          <div class="explainer-row">
+            <figure class="explainer" data-explainer="p06"></figure>
+            <div class="anatomy">
+              <div class="anatomy__row" data-k="linea"><span class="tagline">Método y endpoint</span><code><b class="c-post">POST</b> https://api.openai.com/v1/responses</code></div>
+              <div class="anatomy__row" data-k="headers"><span class="tagline">Encabezados</span><code>Authorization: Bearer &lt;API_KEY&gt;<br />Content-Type: application/json</code></div>
+              <div class="anatomy__row" data-k="body"><span class="tagline">Cuerpo JSON</span><code>{<br />&nbsp;&nbsp;"model": "gpt-6-luna",<br />&nbsp;&nbsp;"input": "Explica qué es una variable en Java."<br />}</code></div>
+              <div class="anatomy__row" data-k="status"><span class="tagline">Respuesta</span><code><b class="c-ok">200 OK</b> + JSON con el texto generado</code></div>
+            </div>
+          </div>
+
+          <div class="lab" id="builder">
+            <div class="lab__bar">
+              <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <b>Simulador de solicitudes</b>
+              <div class="mode-switch" role="radiogroup" aria-label="Modo del simulador">
+                <button type="button" role="radio" aria-checked="true" data-mode="sim">Simulado (sin clave)</button>
+                <button type="button" role="radio" aria-checked="false" data-mode="local">Mi backend local</button>
+              </div>
+            </div>
+
+            <div class="lab__grid">
+              <form class="builder" id="builderForm" autocomplete="off" onsubmit="return false">
+                <div class="builder__line">
+                  <label class="sr-only" for="bMethod">Método</label>
+                  <select id="bMethod"><option>POST</option><option>GET</option><option>PUT</option><option>DELETE</option></select>
+                  <label class="sr-only" for="bUrl">URL</label>
+                  <input id="bUrl" type="text" value="https://api.openai.com/v1/responses" spellcheck="false" />
+                </div>
+
+                <fieldset class="builder__group">
+                  <legend>Encabezados</legend>
+                  <label class="hdr"><input type="checkbox" id="hAuth" checked /><code>Authorization: Bearer</code><input id="bKey" type="text" value="$OPENAI_API_KEY" spellcheck="false" aria-label="Valor de la clave" /></label>
+                  <label class="hdr"><input type="checkbox" id="hType" checked /><code>Content-Type: application/json</code></label>
+                  <p class="warn-inline" id="keyWarn" hidden>Parece una clave real. Nunca pegues tu clave en una página web: aquí usa <code>$OPENAI_API_KEY</code>.</p>
+                </fieldset>
+
+                <fieldset class="builder__group">
+                  <legend>Cuerpo JSON</legend>
+                  <label class="field"><span>model</span>
+                    <select id="bModel"><option value="gpt-6-luna">gpt-6-luna</option><option value="gpt-6-luna-mini">gpt-6-luna-mini</option><option value="modelo-inventado">modelo-inventado</option></select>
+                  </label>
+                  <label class="field"><span>instructions</span>
+                    <textarea id="bInstructions" rows="2">Eres un tutor de programación. Responde en español con ejemplos sencillos.</textarea>
+                  </label>
+                  <label class="field"><span>input</span>
+                    <textarea id="bInput" rows="2">Explica qué es una variable en Python en máximo 80 palabras.</textarea>
+                  </label>
+                  <div class="presets" aria-label="Preguntas de ejemplo">
+                    <button type="button" data-preset="¿Qué es un ciclo for en Python?">ciclo for</button>
+                    <button type="button" data-preset="Explica qué es una promesa en JavaScript.">promesa</button>
+                    <button type="button" data-preset="Explica qué es un embedding.">embedding</button>
+                    <button type="button" data-preset="¿Qué diferencia existe entre una lista y una tupla?">lista vs tupla</button>
+                    <button type="button" data-preset="">vacía</button>
+                  </div>
+                  <label class="field field--range"><span>max_output_tokens <b id="bMaxOut">500</b></span>
+                    <input id="bMax" type="range" min="16" max="1000" step="4" value="500" />
+                  </label>
+                </fieldset>
+
+                <fieldset class="builder__group builder__group--chaos">
+                  <legend>Situaciones del mundo real</legend>
+                  <label class="chaos"><input type="radio" name="chaos" value="none" checked /> Todo normal</label>
+                  <label class="chaos"><input type="radio" name="chaos" value="429" /> Demasiadas solicitudes (429)</label>
+                  <label class="chaos"><input type="radio" name="chaos" value="503" /> Proveedor no disponible (503)</label>
+                  <label class="chaos"><input type="radio" name="chaos" value="incomplete" /> 200, pero respuesta incompleta</label>
+                </fieldset>
+
+                <p class="local-hint" id="localHint" hidden>Modo backend local: la página llama a <code>POST http://localhost:3000/api/preguntar</code> con <code>{"pregunta": …}</code>. Arráncalo con <code>cd api &amp;&amp; npm install &amp;&amp; npm start</code>. Tu backend pone la clave; la página nunca la ve.</p>
+
+                <button class="primary-button primary-button--wide" type="button" id="sendRequest">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 21 3l-8.5 18-2-7.5z" /></svg>
+                  <span>Enviar solicitud</span>
+                </button>
+              </form>
+
+              <div class="wire" aria-live="polite">
+                <div class="flight" id="flight" aria-hidden="true">
+                  <span class="flight__node" data-node="cliente">Cliente</span>
+                  <span class="flight__track"><i class="flight__packet"></i></span>
+                  <span class="flight__node" data-node="backend">Backend</span>
+                  <span class="flight__track"><i class="flight__packet"></i></span>
+                  <span class="flight__node" data-node="proveedor">Proveedor</span>
+                </div>
+                <div class="tabs" role="tablist" aria-label="Vista de la solicitud y la respuesta">
+                  <button role="tab" type="button" aria-selected="true" data-tab="res">Respuesta</button>
+                  <button role="tab" type="button" aria-selected="false" data-tab="curl">cURL</button>
+                  <button role="tab" type="button" aria-selected="false" data-tab="python">Python</button>
+                  <button role="tab" type="button" aria-selected="false" data-tab="js">JavaScript</button>
+                  <button role="tab" type="button" aria-selected="false" data-tab="n8n">n8n</button>
+                </div>
+                <div class="term" id="termPanel">
+                  <div class="term__status" id="resStatus"><span class="status-chip">Esperando</span><small>Presiona «Enviar solicitud».</small></div>
+                  <pre class="code" id="resBody"><code>// Aquí aparecerá la respuesta JSON del servidor.</code></pre>
+                  <button class="copy-button" type="button" data-copy-target="resBody">Copiar</button>
+                </div>
+                <div class="readout" id="readout" hidden>
+                  <div><span>Texto extraído</span><p id="readText"></p></div>
+                  <div class="readout__nums">
+                    <span><b id="readIn">0</b> entrada</span><span><b id="readOut">0</b> salida</span><span><b id="readTotal">0</b> total</span>
+                  </div>
+                </div>
+                <div class="diagnosis" id="diagnosis" hidden></div>
+              </div>
+            </div>
+          </div>
+          <button class="checkpoint" type="button" data-checkpoint="solicitud"><span class="checkpoint__box"></span><span>Envié una solicitud correcta y provoqué al menos un error</span></button>
+        </section>
+
+        <!-- ============ 04 · SEGURIDAD ============ -->
+        <section id="seguridad" class="station" data-station="seguridad">
+          <header class="station__head">
+            <span class="station__num">04</span>
+            <div>
+              <span class="eyebrow">Autenticación · RA 6</span>
+              <h2>La API Key es un gafete, no una contraseña para el modelo</h2>
+              <p>La clave identifica y autoriza a <strong>tu aplicación</strong>. Viaja en el encabezado <code>Authorization: Bearer TU_API_KEY</code>. Quien la tenga puede gastar a tu nombre, por eso vive en una <strong>variable de entorno</strong> del servidor.</p>
+            </div>
+          </header>
+
+          <div class="explainer-row">
+            <figure class="explainer" data-explainer="p07"></figure>
+            <div class="concept-stack">
+              <h3 class="mini-title">Inspector del navegador</h3>
+              <p class="muted">Cualquier persona puede abrir las herramientas de desarrollo (F12) y ver lo que envía una página. Compara.</p>
+              <div class="segmented" role="radiogroup" aria-label="Dónde está la clave">
+                <button type="button" role="radio" aria-checked="true" data-leak="front">Clave en el frontend</button>
+                <button type="button" role="radio" aria-checked="false" data-leak="back">Clave en el backend</button>
+              </div>
+              <div class="devtools" id="devtools">
+                <div class="devtools__tabs"><span>Elements</span><span>Console</span><b>Network</b><span>Sources</span></div>
+                <div class="devtools__body" id="devtoolsBody"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rules">
+            <article class="rule rule--ok"><h3>Sí</h3><ul><li>Guardar la clave en <code>OPENAI_API_KEY</code> (variable de entorno).</li><li>Usar el gestor de credenciales de n8n.</li><li>Agregar <code>.env</code> al <code>.gitignore</code>.</li><li>Usar HTTPS y validar lo que llega al backend.</li></ul></article>
+            <article class="rule rule--no"><h3>Nunca</h3><ul><li>Escribirla en el código JavaScript del navegador.</li><li>Subirla a Git, capturas de pantalla o ejemplos públicos.</li><li>Dejarla escrita en comandos que queden en el historial.</li><li>Mandarla dentro del prompt al modelo.</li></ul></article>
+            <article class="rule rule--info"><h3>Para que no te sorprenda</h3><p>Una suscripción a ChatGPT y el uso de la API son <strong>servicios distintos</strong>. La API se factura por uso: modelo, tokens procesados y otros recursos.</p></article>
+          </div>
+          <div class="term term--static">
+            <div class="term__status"><span class="status-chip">Terminal · macOS</span><small>Configura y verifica la clave sin mostrarla</small></div>
+            <pre class="code" id="keyCode"><code><span class="c-com"># 1. Configurar la variable (solo en tu terminal)</span>
+export OPENAI_API_KEY="TU_CLAVE_API"
+
+<span class="c-com"># 2. Verificar que existe, sin imprimir su valor</span>
+if [ -n "$OPENAI_API_KEY" ]; then
+    echo "Clave configurada"
+else
+    echo "Falta configurar la clave"
+fi</code></pre>
+            <button class="copy-button" type="button" data-copy-target="keyCode">Copiar</button>
+          </div>
+          <button class="checkpoint" type="button" data-checkpoint="seguridad"><span class="checkpoint__box"></span><span>Sé dónde guardar la clave y dónde no</span></button>
+        </section>
+
+        <!-- ============ 05 · JSON ============ -->
+        <section id="json" class="station" data-station="json">
+          <header class="station__head">
+            <span class="station__num">05</span>
+            <div>
+              <span class="eyebrow">La respuesta · RA 4</span>
+              <h2>Leer el JSON: dónde está el texto y cuánto costó</h2>
+              <p><strong>JSON</strong> (JavaScript Object Notation) representa información con <strong>propiedades y valores</strong>. Con él viajan la instrucción, los parámetros del modelo y el resultado.</p>
+            </div>
+          </header>
+
+          <div class="explainer-row">
+            <figure class="explainer" data-explainer="p08"></figure>
+            <div class="concept-stack">
+              <h3 class="mini-title">Taller de JSON en vivo</h3>
+              <p class="muted">Escribe o corrige el objeto. Te decimos si es válido y qué tipo tiene cada valor.</p>
+              <textarea class="json-editor" id="jsonEditor" rows="7" spellcheck="false">{
+  "nombre": "Laura",
+  "edad": 22,
+  "activo": true,
+  "lenguajes": ["Python", "Java"]
+}</textarea>
+              <div class="json-types" id="jsonTypes" aria-live="polite"></div>
+            </div>
+          </div>
+
+          <div class="explorer">
+            <div class="explorer__intro">
+              <h3 class="mini-title">Misión: encuentra el texto generado</h3>
+              <p>Esta respuesta trae <strong>dos elementos</strong> en <code>output</code>. Toca valores del árbol; cuando toques el texto que escribió el modelo, ganas la misión. Debajo verás cómo llegar a ese dato en jq, Python y JavaScript.</p>
+              <p class="note">Nunca supongas que <code>output[0]</code> es el mensaje: filtra por <code>type == "message"</code> y luego por <code>type == "output_text"</code>.</p>
+            </div>
+            <div class="explorer__grid">
+              <div class="tree" id="jsonTree" role="tree" aria-label="Respuesta JSON de ejemplo"></div>
+              <div class="path-card" id="pathCard" aria-live="polite">
+                <span class="tagline">Ruta del dato</span>
+                <code id="pathValue">Toca un valor</code>
+                <p id="pathExplain">Cada propiedad tiene una función: id, status, model, output, usage…</p>
+                <pre class="code code--small" id="pathCode"><code></code></pre>
+              </div>
+            </div>
+            <p class="muted small">JSON ilustrativo: una respuesta real puede traer más propiedades y otras cantidades de tokens.</p>
+          </div>
+          <button class="checkpoint" type="button" data-checkpoint="json"><span class="checkpoint__box"></span><span>Encontré el texto y los tokens en la respuesta</span></button>
+        </section>
+
+        <!-- ============ 06 · LABORATORIOS ============ -->
+        <section id="laboratorios" class="station" data-station="laboratorios">
+          <header class="station__head">
+            <span class="station__num">06</span>
+            <div>
+              <span class="eyebrow">Implementación · RA 5</span>
+              <h2>Cuatro laboratorios, una misma conversación</h2>
+              <p>La solicitud es la misma en cualquier herramienta. Cambia la forma de escribirla. Todo el código está en la carpeta <code>laboratorios/</code> del repositorio y funciona en <strong>modo simulado</strong> si todavía no tienes clave.</p>
+            </div>
+          </header>
+
+          <div class="labs-tabs" role="tablist" aria-label="Laboratorios">
+            <button role="tab" type="button" aria-selected="true" data-lab="curl"><i>L1</i>cURL</button>
+            <button role="tab" type="button" aria-selected="false" data-lab="python"><i>L2</i>Python</button>
+            <button role="tab" type="button" aria-selected="false" data-lab="js"><i>L3</i>JavaScript</button>
+            <button role="tab" type="button" aria-selected="false" data-lab="n8n"><i>L4</i>n8n</button>
+          </div>
+          <div class="lab-panel" id="labPanel"></div>
+          <button class="checkpoint" type="button" data-checkpoint="laboratorios"><span class="checkpoint__box"></span><span>Corrí al menos un laboratorio en mi computadora</span></button>
+        </section>
+
+        <!-- ============ 07 · ERRORES ============ -->
+        <section id="errores" class="station" data-station="errores">
+          <header class="station__head">
+            <span class="station__num">07</span>
+            <div>
+              <span class="eyebrow">Control de errores · RA 6</span>
+              <h2>Cuando algo falla: leer el código y decidir</h2>
+              <p>Tu app depende de un servicio remoto: puede fallar la conexión, la clave, la cuota o el servidor. No basta con programar el camino feliz.</p>
+            </div>
+          </header>
+
+          <div class="explainer-row">
+            <figure class="explainer" data-explainer="p09"></figure>
+            <div class="concept-stack">
+              <h3 class="mini-title">Toca un código</h3>
+              <div class="codes" id="codes"></div>
+              <div class="code-card" id="codeCard" aria-live="polite"><b>Elige un código HTTP</b><p>Te diremos qué significa y si conviene reintentar.</p></div>
+            </div>
+          </div>
+
+          <div class="backoff">
+            <div class="backoff__head">
+              <div>
+                <h3 class="mini-title">Simulador de reintentos (exponential backoff)</h3>
+                <p class="muted">Cada espera es el doble que la anterior. En la vida real se suma un poco de azar (<em>jitter</em>), un máximo de intentos y se respeta <code>Retry-After</code>.</p>
+              </div>
+              <div class="backoff__controls">
+                <label class="sr-only" for="boScenario">Escenario</label>
+                <select id="boScenario">
+                  <option value="503">503 dos veces y luego 200</option>
+                  <option value="429">429 con Retry-After: 3</option>
+                  <option value="401">401 clave inválida</option>
+                  <option value="caido">Proveedor caído todo el rato</option>
+                </select>
+                <button class="primary-button" type="button" id="boRun"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z" /></svg><span>Ejecutar</span></button>
+              </div>
+            </div>
+            <ol class="backoff__lane" id="boLane"></ol>
+            <p class="feedback" id="boFeedback" aria-live="polite"></p>
+            <p class="note">Cuidado: una solicitud de generación pudo haberse procesado aunque no recibiste la respuesta. Reintentar a ciegas puede cobrarte dos veces.</p>
+          </div>
+
+          <div class="split-note">
+            <article><h3>Error HTTP</h3><p>El servicio devuelve un código de fallo como <code>401</code>, <code>429</code> o <code>500</code>.</p></article>
+            <article><h3>Error funcional</h3><p>Llegó un <code>200</code>, pero el texto no tiene el formato esperado o <code>status</code> no es <code>completed</code>. <strong>Un 200 no garantiza una buena respuesta.</strong></p></article>
+          </div>
+          <button class="checkpoint" type="button" data-checkpoint="errores"><span class="checkpoint__box"></span><span>Sé cuándo reintentar y cuándo no</span></button>
+        </section>
+
+        <!-- ============ 08 · TOKENS ============ -->
+        <section id="tokens" class="station" data-station="tokens">
+          <header class="station__head">
+            <span class="station__num">08</span>
+            <div>
+              <span class="eyebrow">Consumo y costos</span>
+              <h2>Tokens: el taxímetro del modelo</h2>
+              <p>Un <strong>token</strong> es la unidad con la que el modelo procesa texto. No es lo mismo que una palabra: puede ser una palabra, un pedazo de ella o un signo. Muchos proveedores cobran por tokens de <strong>entrada</strong> y de <strong>salida</strong>.</p>
+            </div>
+          </header>
+
+          <div class="explainer-row">
+            <figure class="explainer" data-explainer="p10"></figure>
+            <div class="concept-stack">
+              <h3 class="mini-title">Mira tu texto partido en fichas</h3>
+              <textarea class="json-editor json-editor--soft" id="tokText" rows="3" spellcheck="false">Explica qué es una función en Python con un ejemplo sencillo.</textarea>
+              <div class="tok-chips" id="tokChips"></div>
+              <p class="muted small" id="tokCount"></p>
+              <p class="note">Aproximación educativa: cada modelo tiene su propio tokenizador y los números reales pueden variar.</p>
+            </div>
+          </div>
+
+          <div class="calc">
+            <div class="calc__inputs">
+              <h3 class="mini-title">Simulador de costos</h3>
+              <p class="muted small">Tarifas hipotéticas en USD por millón de tokens. No son la cotización de un modelo real: para proyectos reales revisa la página oficial de precios.</p>
+              <label class="field field--range"><span>Tokens de entrada <b id="cInLbl">2.000</b></span><input id="cIn" type="range" min="100" max="20000" step="100" value="2000" /></label>
+              <label class="field field--range"><span>Tokens de salida <b id="cOutLbl">500</b></span><input id="cOut" type="range" min="50" max="8000" step="50" value="500" /></label>
+              <div class="calc__pair">
+                <label class="field"><span>USD / millón de entrada</span><input id="cPin" type="number" min="0" step="0.05" value="0.50" /></label>
+                <label class="field"><span>USD / millón de salida</span><input id="cPout" type="number" min="0" step="0.05" value="2.00" /></label>
+              </div>
+              <label class="field field--range"><span>Solicitudes iguales <b id="cNLbl">100</b></span><input id="cN" type="range" min="1" max="10000" step="1" value="100" /></label>
+            </div>
+            <div class="calc__out">
+              <div class="meter"><span>Costo por solicitud</span><b id="cPer">US$ 0.002000</b></div>
+              <div class="meter meter--big"><span>Costo total estimado</span><b id="cTotal">US$ 0.2000</b></div>
+              <div class="formula" id="cFormula"></div>
+              <p class="muted small">No incluye herramientas externas, impuestos, almacenamiento ni modos especiales.</p>
+            </div>
+          </div>
+
+          <ul class="tips">
+            <li>Envía solo el contexto relevante.</li>
+            <li>No repitas información innecesaria.</li>
+            <li>Pon un límite razonable de salida (<code>max_output_tokens</code>).</li>
+            <li>Elige el modelo según la complejidad: clasificar o resumir no siempre necesita el más avanzado.</li>
+            <li>Reutiliza resultados cuando sea apropiado.</li>
+          </ul>
+          <button class="checkpoint" type="button" data-checkpoint="tokens"><span class="checkpoint__box"></span><span>Sé calcular el costo de una solicitud</span></button>
+        </section>
+
+        <!-- ============ 09 · PROYECTO ============ -->
+        <section id="proyecto" class="station" data-station="proyecto">
+          <header class="station__head">
+            <span class="station__num">09</span>
+            <div>
+              <span class="eyebrow">Actividad integradora · RA 7</span>
+              <h2>Proyecto: asistente de programación por API REST</h2>
+              <p><strong>Escenario:</strong> una institución educativa quiere una herramienta de consola para resolver dudas de programación. El estudiante escribe una pregunta, la app la envía al proveedor y muestra la respuesta.</p>
+            </div>
+          </header>
+
+          <div class="project">
+            <div class="project__col">
+              <h3 class="mini-title">Requerimientos funcionales <small id="rfCount">0 / 9</small></h3>
+              <ul class="checklist" id="rfList"></ul>
+              <h3 class="mini-title">No funcionales</h3>
+              <ul class="plain">
+                <li>HTTPS para hablar con el proveedor.</li>
+                <li>API Key en variables de entorno.</li>
+                <li>Lógica de comunicación separada de la consola.</li>
+                <li>Tiempo máximo de espera (timeout).</li>
+                <li>Mensajes de error comprensibles.</li>
+              </ul>
+            </div>
+            <div class="project__col">
+              <h3 class="mini-title">Estructura del proyecto</h3>
+              <pre class="code code--tree"><code>asistente-ia-rest/
+├── main.py            <span class="c-com"># la consola: pregunta y muestra</span>
+├── cliente_ia.py      <span class="c-com"># habla con la API (HTTP + JSON)</span>
+├── requirements.txt   <span class="c-com"># requests</span>
+├── .gitignore         <span class="c-com"># .venv, .env</span>
+├── README.md
+└── pruebas/
+    └── test_validacion.py</code></pre>
+              <p class="muted small">Versión completa y probada en <code>laboratorios/02-python/asistente-ia-rest</code>.</p>
+              <h3 class="mini-title">Retos para subir de nivel</h3>
+              <ul class="plain">
+                <li>Elegir el tipo de consulta: explicar código, generar una función o analizar un error.</li>
+                <li>Llevar la cuenta de solicitudes y tokens, sin guardar secretos ni preguntas sensibles.</li>
+                <li>Avanzado: exponer tu propio <code>POST /api/preguntar</code> (está en <code>api/</code>) y consumirlo desde una página web.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="rubric">
+            <h3 class="mini-title">Así se evalúa</h3>
+            <div class="rubric__bars" id="rubric"></div>
+            <div class="evidence">
+              <span><b>Conocimiento</b> Explica API, REST, endpoint, HTTP, autenticación y JSON.</span>
+              <span><b>Desempeño</b> Ejecuta solicitudes con cURL y un lenguaje.</span>
+              <span><b>Producto</b> App funcional que consume la API y controla errores.</span>
+              <span><b>Sustentación</b> Explica el flujo, la seguridad y las pruebas.</span>
+            </div>
+          </div>
+          <button class="checkpoint" type="button" data-checkpoint="proyecto"><span class="checkpoint__box"></span><span>Revisé los requerimientos de mi proyecto</span></button>
+        </section>
+
+        <!-- ============ 10 · RETO FINAL ============ -->
+        <section id="reto" class="station" data-station="reto">
+          <header class="station__head">
+            <span class="station__num">10</span>
+            <div>
+              <span class="eyebrow">Cierre</span>
+              <h2>Reto final: 10 preguntas</h2>
+              <p>Responde sin mirar. Cada respuesta te explica el porqué.</p>
+            </div>
+          </header>
+          <div class="quiz" id="quiz"></div>
+          <div class="quiz-result" id="quizResult" hidden></div>
+
+          <div class="glossary">
+            <div class="glossary__head">
+              <h3 class="mini-title">Glosario</h3>
+              <label class="search"><span class="sr-only">Buscar término</span><input id="glossSearch" type="search" placeholder="Buscar: token, endpoint, 429…" /></label>
+            </div>
+            <dl class="glossary__list" id="glossList"></dl>
+          </div>
+
+          <div class="refs">
+            <h3 class="mini-title">Referencias oficiales</h3>
+            <ul>
+              <li><a href="https://platform.openai.com/docs/quickstart" target="_blank" rel="noopener">OpenAI API · Guía de inicio</a></li>
+              <li><a href="https://platform.openai.com/docs/guides/text" target="_blank" rel="noopener">Generación de texto con la Responses API</a></li>
+              <li><a href="https://platform.openai.com/docs/guides/production-best-practices" target="_blank" rel="noopener">Buenas prácticas de producción</a></li>
+              <li><a href="https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.httprequest/" target="_blank" rel="noopener">n8n · Nodo HTTP Request</a></li>
+              <li><a href="https://developer.mozilla.org/es/docs/Web/HTTP/Overview" target="_blank" rel="noopener">MDN · Generalidades de HTTP</a></li>
+            </ul>
+            <p class="muted small">Aunque los ejemplos usan OpenAI, la comunicación HTTP, el intercambio de JSON y la seguridad aplican a otros proveedores de modelos.</p>
+          </div>
+          <button class="checkpoint" type="button" data-checkpoint="reto"><span class="checkpoint__box"></span><span>Terminé el reto final</span></button>
+        </section>
+
+        <footer class="footer">
+          <img src="assets/img/orbit.png" alt="" width="72" height="72" />
+          <p><strong>Campuslands Guatemala</strong> · Formación en IA Generativa · Consumo de modelos de IA mediante una API RESTful.<br /><span class="muted">Hecho con cariño para nuestros Campers. Código abierto con licencia MIT.</span></p>
+        </footer>
+      </main>
+    </div>
+
+    <dialog class="theater" id="theater" aria-label="Video explicativo">
+      <div class="theater__inner">
+        <button class="theater__close" type="button" data-close-theater aria-label="Cerrar video">×</button>
+        <video id="theaterVideo" controls playsinline preload="metadata"></video>
+        <div class="theater__chapters" id="theaterChapters"></div>
+      </div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js?v=2" defer></script>
+  </body>
+</html>

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="es" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>P08 · JSON: solicitud y respuesta</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="shared/teacher.css" />
+    <script src="shared/teacher.js"></script>
+    <style>
+      /* Pizarra: objeto JSON → solicitud → respuesta (arriba) · usage (abajo) */
+      #board .card { height: 424px; top: 0; }
+      #board .card > h3 { padding-left: 36px; }
+      #c-obj { left: 0; width: 600px; }
+      #c-req { left: 630px; width: 584px; }
+      #c-res { left: 1244px; width: 532px; }
+      #board .card .paper { position: relative; margin-top: 4px; font-size: 26px; padding: 16px 22px; width: 100%; white-space: pre; line-height: 1.3; }
+      .s { color: #0c7a55; font-weight: 700; } .n { color: #1f6fd1; font-weight: 700; } .b { color: #b0005a; font-weight: 700; } .a { color: #7a3cff; font-weight: 700; }
+      #board .card p .s, #board .card p .n, #board .card p .b, #board .card p .a { font-weight: 800; }
+      #board .card p .s { color: #45e0a8; } #board .card p .n { color: #5bdcff; } #board .card p .b { color: #ff7ab6; } #board .card p .a { color: #b997ff; }
+      .k { color: #4b4358; }
+      .hl2 { border-radius: 6px; padding: 0 4px; }
+      #board #c-use { left: 0; top: 456px; width: 1440px; height: 136px; flex-direction: row; align-items: center; gap: 28px; }
+      #c-use h3 { font-family: "JetMono", monospace; font-size: 36px; }
+      .ubar { position: relative; flex: 1; height: 78px; display: flex; gap: 8px; }
+      .ubar div { position: relative; height: 100%; border-radius: 14px; display: flex; flex-direction: column; justify-content: center; padding: 0 18px; transform-origin: 0 50%; }
+      .ubar small { font-size: 22px; font-weight: 800; letter-spacing: .04em; color: #062418; }
+      .ubar b { font-family: "Bricolage"; font-size: 34px; color: #062418; line-height: 1; }
+      .u-in { width: 56%; background: #5bdcff; } .u-out { width: 28%; background: #45e0a8; }
+      .u-tot { width: 16%; background: #ffc45a; }
+      #n1 { left: -14px; top: -18px; } #n2 { left: 616px; top: -18px; } #n3 { left: 1230px; top: -18px; } #n4 { left: -14px; top: 438px; }
+      #note-res { left: 1250px; top: 448px; max-width: 320px; }
+      /* Analogía: formulario de inscripción con casillas */
+      .form { position: absolute; left: 70px; top: 60px; width: 620px; height: 500px; border-radius: 30px; background: #f4f0ff; color: #17131d; padding: 34px 40px; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+      .form h4 { font-family: "Bricolage"; font-size: 36px; margin-bottom: 20px; }
+      .field { display: flex; align-items: center; gap: 18px; margin-bottom: 18px; }
+      .field label { width: 170px; font-weight: 800; font-size: 28px; color: #4b4358; }
+      .field .box { flex: 1; height: 62px; border-radius: 14px; border: 3px solid #b9b0c9; display: flex; align-items: center; gap: 10px; padding: 0 16px; font-size: 30px; font-weight: 750; }
+      .field .box span { opacity: 0; }
+      .chip { padding: 4px 14px; border-radius: 10px; background: #7a3cff; color: #fff; font-size: 26px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="p08" data-start="0" data-duration="40" data-width="1920" data-height="1080" data-fps="30">
+      <div id="board">
+        <div class="card cyan" id="c-obj"><h3>Un objeto JSON</h3>
+          <p><span class="s">cadena</span> · <span class="n">número</span> · <span class="b">booleano</span> · <span class="a">arreglo</span></p>
+<div class="paper">{
+  <span class="k">"nombre"</span>: <span class="s">"Laura"</span>,
+  <span class="k">"edad"</span>: <span class="n">22</span>,
+  <span class="k">"activo"</span>: <span class="b">true</span>,
+  <span class="k">"lenguajes"</span>: <span class="a">["Python","Java"]</span>
+}</div></div>
+
+        <div class="card accent" id="c-req"><h3>La solicitud que envías</h3>
+          <p>modelo · comportamiento · pregunta</p>
+<div class="paper">{
+  <span class="hl2 r1">"model": "gpt-6-luna",</span>
+  <span class="hl2 r2">"instructions": "Eres tutor",</span>
+  <span class="hl2 r3">"input": "¿Qué es un for?"</span>
+}</div></div>
+
+        <div class="card green" id="c-res"><h3>La respuesta</h3>
+          <p>Lo que recibes: el camino al texto</p>
+<div class="paper"><span class="hl2 t1">"output": [{</span>
+  <span class="hl2 t2">"type": "message",</span>
+  <span class="hl2 t3">"content": [{</span>
+    <span class="hl2 t4">"type": "output_text",</span>
+    <span class="hl2 t5">"text": "Un for repite…"</span>
+  }]
+}]</div></div>
+
+        <div class="card yellow" id="c-use"><h3>"usage"</h3>
+          <div class="ubar">
+            <div class="u-in"><small>input_tokens</small><b>45</b></div>
+            <div class="u-out"><small>output_tokens</small><b>22</b></div>
+            <div class="u-tot"><small>total</small><b>67</b></div>
+          </div></div>
+
+        <div class="num" id="n1">1</div><div class="num" id="n2">2</div><div class="num" id="n3">3</div><div class="num" id="n4">4</div>
+        <div class="note purple" id="note-res">Filtra por type: el primero no siempre es el texto.</div>
+      </div>
+    </div>
+    <script>
+      const T = Teacher.setup({
+        cls: 3, point: 8,
+        title: "¿En qué <em>idioma</em> se hablan la app y el modelo?",
+        headTitle: "JSON: solicitud y respuesta",
+        question: "Lo que envías y lo que recibes viaja en JSON. Si sabes leerlo, sabes dónde está la respuesta del modelo.",
+        analogy: {
+          art: `<div class="form"><h4>Inscripción Campuslands</h4>
+            <div class="field"><label>Nombre</label><div class="box"><span>Laura</span></div></div>
+            <div class="field"><label>Edad</label><div class="box"><span>22</span></div></div>
+            <div class="field"><label>¿Activa?</label><div class="box"><span>Sí</span></div></div>
+            <div class="field"><label>Lenguajes</label><div class="box"><span class="chip">Python</span><span class="chip">Java</span></div></div></div>`,
+          title: "Un formulario con casillas",
+          text: "Cada casilla tiene una <em>etiqueta</em> y un <em>valor</em>. JSON es ese mismo formulario, escrito para que dos programas lo lean igual.",
+        },
+        steps: [
+          { label: "Propiedad y valor", caption: "JSON guarda datos en pares <em>propiedad: valor</em>: cadenas, números, booleanos y arreglos." },
+          { label: "La solicitud", caption: "Tu solicitud dice <em>qué modelo</em> usar, cómo debe comportarse y cuál es la pregunta." },
+          { label: "La respuesta", caption: "El texto vive en output → content → <em>output_text</em>. Filtra por type, no tomes el primero." },
+          { label: "El consumo", caption: "En usage ves los <em>tokens</em>: 45 de entrada más 22 de salida, 67 en total." },
+        ],
+        takeaway: {
+          title: "Envías <em>model, instructions e input</em>; buscas el <em>text</em> dentro de output.",
+          text: "Recorre output filtrando por type, y revisa usage para saber cuánto consumiste.",
+        },
+      });
+
+      const s = T.stepAt;
+      // Analogía: las casillas se llenan una por una
+      T.slide("@.form", T.analogyAt(.4), { y: 30 });
+      T.tl.fromTo(".form .box span", { opacity: 0, x: -10 }, { opacity: 1, x: 0, duration: .4, stagger: .55 }, T.analogyAt(1.4));
+      T.tl.to(".form .box", { borderColor: "#7a3cff", duration: .3, stagger: .55 }, T.analogyAt(1.4));
+
+      T.tl.set(["#board .card", "#board .num", "#board .note"], { opacity: 0 }, 0);
+      T.tl.set(".ubar div", { scaleX: 0 }, 0);
+
+      // Paso 1 · Objeto JSON
+      T.pop("#c-obj", s(0, .1)).pop("#n1", s(0, .35));
+      T.pulse("#c-obj p", s(0, 1.6), 1.05);
+
+      // Paso 2 · Solicitud
+      T.pop("#c-req", s(1, .1)).pop("#n2", s(1, .35));
+      T.tl.to(["#board .r1", "#board .r2", "#board .r3"], { backgroundColor: "rgba(122,60,255,.2)", duration: .3, stagger: .7 }, s(1, 1.1));
+
+      // Paso 3 · Respuesta
+      T.pop("#c-res", s(2, .1)).pop("#n3", s(2, .35));
+      T.tl.to(["#board .t1", "#board .t2", "#board .t3", "#board .t4"], { backgroundColor: "rgba(69,224,168,.25)", duration: .25, stagger: .35 }, s(2, .9));
+      T.tl.to("#board .t5", { backgroundColor: "#45e0a8", duration: .3 }, s(2, 2.4));
+      T.slide("#note-res", s(2, 1.0), { y: 20 });
+
+      // Paso 4 · usage
+      T.fadeOut("#note-res", s(3, 0));
+      T.pop("#c-use", s(3, .1)).pop("#n4", s(3, .35));
+      T.fromTo(".ubar div", s(3, .7), { scaleX: 0 }, { scaleX: 1, duration: .7, stagger: .45, ease: "power3.out" });
+      T.pulse(".u-tot", s(3, 2.6), 1.08);
+
+      window.__timelines["p08"] = T.tl;
+    </script>
+  </body>
+</html>

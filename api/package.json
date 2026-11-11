@@ -1,0 +1,16 @@
+{
+  "name": "api-consumo-ia-campuslands",
+  "version": "1.0.0",
+  "description": "Backend propio que protege la clave y consume un modelo de IA mediante una API RESTful (Responses API). Funciona sin clave en modo simulado.",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  }
+}

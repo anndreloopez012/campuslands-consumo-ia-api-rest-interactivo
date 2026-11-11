@@ -1,0 +1,17 @@
+{
+  "id": "resp_ejemplo",
+  "object": "response",
+  "status": "completed",
+  "model": "gpt-6-luna",
+  "output": [
+    { "type": "reasoning", "id": "rs_ejemplo", "summary": [] },
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        { "type": "output_text", "text": "Una variable es un nombre que permite referirse a un valor en un programa." }
+      ]
+    }
+  ],
+  "usage": { "input_tokens": 45, "output_tokens": 22, "total_tokens": 67 }
+}
